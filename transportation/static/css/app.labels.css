@@ -1,0 +1,42 @@
+body {
+    margin: 0px;
+    font: 8pt sans-serif;
+}
+
+p, input {
+    font: 8pt sans-serif;
+    margin: 1px;
+}
+
+th {
+    font: 9pt sans-serif;
+    font-weight: bold;
+}
+
+td {
+    font: 8pt sans-serif;
+}
+
+div {
+    margin: 0px;
+}
+
+div.break {
+    page-break-before: always;
+}
+
+td.label {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 9pt;
+    font-style: normal;
+    line-height: normal;
+    font-weight: normal;
+    font-variant: normal;
+    color: #000000;
+    padding-left: 15px;
+    text-decoration: none;
+    border: thin solid #ffffff;
+    width: 300px;
+    height: 92px;
+    overflow: hidden;
+}

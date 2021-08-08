@@ -1,0 +1,166 @@
+<html>
+<head>
+<title>Vehicle Request</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<style type="text/css">
+	body {
+		margin: 0px;
+		font: 8pt sans-serif;
+	}
+	
+	p, input {
+		font: 8pt sans-serif;
+		margin: 1px;
+	}
+	td {
+		font: 8pt sans-serif;
+	}
+	div {
+	margin: 0px;
+	}
+</style>
+</head>
+<body>
+{% for triprequest in triprequests %}
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td><strong>Request No.:</strong> {{ triprequest.pk }}</td>
+	
+    <td><div align="right"><strong>Date Received:</strong> {{ triprequest.submitted }}</div></td>
+  </tr>
+</table>
+
+<h3 align="center" style="margin: 0px">Vehicle Request Form</h3>
+  <table width="100%" border="1" align="center" cellpadding="0" cellspacing="0" bordercolor="#000000">
+    <tr valign="top"> 
+      <td width="50%"><p><strong>Requestor Name:</strong>  {{ triprequest.requestor_fullname }}</p></td>
+      <td><strong>Department:</strong> {{ triprequest.department }}</td>
+    </tr>
+    <tr valign="top"> 
+      <td><p><strong>Contact Phone:</strong>   {{ triprequest.contact_phone }}
+        </p></td>
+      <td><strong>Budget Number:</strong>   {{ triprequest.budget }}</td>
+    </tr>
+    <tr valign="top"> 
+      <td><p><strong>Email:</strong>   {{ triprequest.contact_email }}</p></td>
+      <td><p><strong>Destination:</strong>   {{ triprequest.destination }}</p></td>
+    </tr>
+    <tr valign="top"> 
+      <td><p><strong>Departure</strong>
+          <strong>Date/Time:</strong> {{ triprequest.depart_est }}
+      <td><p><strong>Return</strong> 
+          <strong>Date/Time:</strong> {{ triprequest.return_est }}
+    </tr>
+    <tr valign="top"> 
+      <td><p><strong>Driver:</strong>   {{ triprequest.driver_fullname }}</p></td>
+      <td><strong>Vehicle Type:</strong>   {{ triprequest.get_vehicle_type_display }} w/ Trailer: {% if triprequest.trailer %}Yes{% else %}No{% endif %}</td>
+    </tr>
+    <tr valign="top"> 
+      <td><strong>Number in Party:</strong>   {{ triprequest.party_count }}
+      </td>
+      <td><strong>Approximate Mileage:</strong>   {{ triprequest.mileage_est }}
+    </tr> 
+<table width="98%" border="0" align="center" cellpadding="0" cellspacing="0">
+<tr><td><p><strong>Purpose:</strong>
+        <p>{{ triprequest.purpose }}
+      </td></tr>
+<tr valign="top"><td>
+	<div align="center"><p><strong><font size="2">Conditions</font></strong></p></div>
+    <p align="justify">
+		1. Under no circumstance is any ministry-owned, leased, or rented vehicle to be used for personal use.<br>
+		2. Must be an approved driver on our insurance policy.<br>
+        3. Must be 21 years of age.<br>
+        4. Must have a valid Virginia driver's license with the proper class and endorsements for the type of vehicle used.<br>
+        5. In the event of an accident or a breakdown of the vehicle you are driving, please <b>contact the Security Office at (434) 582-7605 or (434) 582-7641</b>. Please leave your name, the group you are with, your exact location, and the phone number where you can be reached. Security will contact the Transportation employee on call at that time.  Furthermore, the driver must go to the Transportation Office to fill out an accident form within 24 hours. Accidents occurring on a weekend must be reported on Monday.<br>
+        6. All vehicles, when returned, must have all windows and doors closed.<br>
+        7. All vehicles must be clean inside when returned.<br>
+        8. Return all keys, this form, and maintenance request form (if necessary) to the Bus Office. Return all vehicles to the same area that you picked them up from unless instructed otherwise.<br>
+        9. If you were given a gas card, it must be returned to the office where you received it with all gas receipts.<br>
+     </p>
+</td>
+	    </tr>
+	  </table>
+  </table>
+<table width="100%" border="1" align="center" cellpadding="0" cellspacing="0" bordercolor="#000000">
+  <tr> 
+      <td colspan="2"><strong>Approval <em>( {{ triprequest.get_status_display }} )</em></strong></td>
+      <td width="157"><strong>Date</strong></td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2">Originator:   {{ triprequest.requestor_fullname }}<p>&nbsp;</td>
+    <td>  {{ triprequest.submitted }}</td>
+  </tr>
+  <tr valign="top"> 
+      <td colspan="2">Transportation Office:   {{ triprequest.manager_fullname }}<p>&nbsp;
+      <td>{{ triprequest.updated }}</td>
+  </tr>
+  <tr valign="top"> 
+      <td width="355"><strong>Vehicle #</strong>   {{ triprequest.vehicle.num }}<p>&nbsp;</td>
+	  <td width="208"><strong>Key Color</strong>   {{ triprequest.key_color }}</td>  
+	  <td><strong>Gas Card #</strong>   {{ triprequest.card_num }}</td>
+  </tr>
+</table>
+<br>
+<table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+  <tr> 
+    <td><div align="center"><strong><font size="2">Driver Report </font></strong></div></td>
+  </tr>
+  <tr> 
+    <td><strong>To be completed upon vehicle departure and return:</strong></td>
+  </tr>
+</table>  
+<table width="98%" border="1" align="center" cellpadding="0" cellspacing="0" bordercolor="#000000">  
+  <tr valign="top"> 
+      <td>Departure Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )</i><p>&nbsp;
+      </td>
+      <td>Beginning Mileage:   </td>
+  </tr>
+  <tr valign="top"> 
+      <td>Return Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )</i><p>&nbsp;</td>
+      <td>Ending Mileage:   </td>
+  </tr>
+  <tr valign="top"> 
+      <td>Fuel Cost:<p>&nbsp;</p></td>
+      <td>Total Mileage:   </td>
+  </tr>
+  </table>
+<p></p><strong>Upon Return:</strong>
+<br>Is the inside of the vehicle clean? <input name="vehicle_clean" type="checkbox" id="vehicle_clean" value="1">
+<br>Can the vehicle be driven forward from this parking space? <input name="vehicle_backedin" type="checkbox" id="vehicle_backedin" value="1">
+<p>Write any vehicle problems below:
+<table width="100%" height="100px" border="1">
+<tr><td></td></tr>
+</table>
+<p>&nbsp;</p><br/><br/>
+<p>Driver's Name (Print): _____________________________________________________________</p><br/><br/><br/>
+<p>Driver's Signature: _______________________________________________________________</p><br/><br/><br/>
+<div style='page-break-after:always'></div>
+{% endfor %}
+<table width="100%" border="1" cellspacing="1" cellpadding="0">
+  <tr> 
+    <td colspan="5"><strong>Vehicle Request Statistical Ticket Summary</strong></td>
+	<td align="right"><strong>Printed on {% now "SHORT_DATETIME_FORMAT" %}</strong></td>
+  </tr>
+  <tr> 
+    <th width="8%">ID</th>
+    <th width="19%">ORIGINATOR</th>
+    <th width="16%">DEPART<br>
+      DATE</th>
+    <th width="15%">RETURN<br>DATE</th>
+    <th width="22%">DRIVER</th>
+    <th width="20%">VEHICLE</th>
+  </tr>
+    {% for triprequest in triprequests %}
+    <tr>
+        <td>{{ triprequest.pk }}</td>
+        <td>{{ triprequest.contact_fullname }}</td>
+        <td>{{ triprequest.depart_est }}</td>
+        <td>{{ triprequest.return_est }}</td>
+        <td>{{ triprequest.driver_fullname }}</td>
+        <td>{{ triprequest.vehicle }} w/ trailer: {{ triprequest.trailer }}</td>
+    </tr>
+    {% endfor %}
+</table>
+<p>&nbsp;</p>
+</body>
+</html>

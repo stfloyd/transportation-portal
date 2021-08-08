@@ -1,0 +1,207 @@
+{% extends "transportation/base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load django_tables2 %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  {% breadcrumb 'Driver List' 'driver-list' %}
+  {% breadcrumb 'Driver' 'driver-detail' driver.pk %}
+{% endblock %}
+
+{% block content %}
+<div class="jumbotron">
+  <h5 class="text-muted">Driver</h5>
+  <h1>{{ driver.full_name }}</h1>
+  <span class="h5 {% if driver.status == 1 %}text-success{% endif %}">{{ driver.get_status_display }}</span><br/>
+  <hr/>
+  <i class="fa-fw {% if driver.has_cdl %}fas fa-check-square text-success{% else %}far fa-square text-danger{% endif %}"></i> CDL
+  <hr/>
+  <div class="row">
+    <div class="col-8">
+        <div class="btn-toolbar" role="toolbar" aria-label="Toolbar">
+            <span class="btn-group mr-2" role="group" aria-label="Edit">
+                <button id="button-edit-driver" data-driver-id="{{ driver.pk }}" class="btn btn-primary btn-primary" type="submit">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </span>
+            {% if user.is_staff %}
+            <span class="btn-group" role="group" aria-label="Print">
+                <button id="button-run-report" class="btn btn-info" type="submit">Report</button>
+            </span>
+            {% endif %}
+        </div>
+    </div> <!-- col -->
+    <div class="col-4 text-right">
+        {% if user.is_moderator or user.is_staff or user.is_superuser %}
+        <span class="btn-group" role="group" aria-label="Delete">
+          {% if user.is_superuser %}
+          <button id="button-del-driver" data-driver-id="{{ driver.pk }}" class="btn btn-lg btn-danger" type="submit">
+              <i class="fas fa-sm fa-trash"></i>
+          </button>
+          {% endif %}
+          {% if driver.status == 2 %}
+          <button id="button-reactivate-driver" data-driver-id="{{ driver.pk }}" class="btn btn-primary text-white" type="button">
+            Reactivate
+          </button>
+          {% elif driver.status == 1 %}
+          <button id="button-deactivate-driver" data-driver-id="{{ driver.pk }}" class="btn {% if driver.has_future_trips %}btn-secondary{% else %}btn-warning{% endif %} text-white " type="button" {% if driver.has_future_trips %}disabled{% endif %}>
+            Deactivate
+          </button>
+          {% endif %}
+        </span>
+        {% endif %}
+    </div> <!-- col -->
+  </div> <!-- row -->
+</div>
+<div class="row px-5">
+  <div class="col-xl-6 col-lg-12">
+    <h4>Phone</h4>
+    {{ driver.phone }}
+    <hr/>
+    <h4>E-mail</h4>
+    {% if driver.email is not None %}
+    <a href="mailto:{{ driver.email }}">{{ driver.email }}</a><br/>
+    {% else %}
+    <span class="text-danger mouse">
+      <i class="fas fa-sm fa-fw fa-exclamation-triangle"></i>
+      <small>Missing driver e-mail contact information</small>
+    </span><br/>
+    {% endif %}
+    <hr/>
+    <h4>Birth Date</h4>
+    {{ driver.birth_date }}
+    <hr/>
+    <h4>State</h4>
+    {{ driver.state }}
+    <hr/>
+    <h4>License #</h4>
+    {{ driver.license_num }}
+    <hr/>
+    <h4>License Expiration</h4>
+    {{ driver.expiration_date }}
+    <hr/>
+    <h4>License Restrictions</h4>
+    {{ driver.restrictions }}
+    <hr/>
+    <h4>Notes</h4>
+    {{ driver.notes }}
+    <hr/>
+  </div>
+  <div class="col-xl-6 col-lg-12">
+    <div class="card border border-light shadow mb-4">
+      <div class="card-header bg-gradient-light border-0">
+        <h2>Upcoming Trip's</h2>
+      </div>
+      <div class="card-body p-0 m-0">
+        {% render_table table %}
+      </div>
+    </div>
+  </div>
+</div>
+{% block scripts %}
+<script type="text/javascript">
+  let checkboxes = $("input[type='checkbox']"),
+    editButton = $("button[id='button-edit-driver']"),
+    deleteButton = $("button[id='button-del-driver']");
+
+  checkboxes.click(function () {
+    console.log("checkbox")
+    deleteButton.attr("disabled", !checkboxes.is(":checked"));
+  });
+</script>
+<script>
+function getCookie(name) {
+  let value = "; " + document.cookie;
+  const parts = value.split("; " + name + "=");
+  if (parts.length == 2) return parts.pop().split(";").shift();
+}
+
+$(document).on('click', '#button-del-driver', function (e) {
+  e.preventDefault();
+  const driverId = "{{ driver.pk }}";
+  const url = `/drivers/${driverId}/delete`;
+  var csrf = getCookie("csrftoken");
+  $.ajax({
+    type: 'POST',
+    url: url,
+    data: {
+      'csrfmiddlewaretoken': csrf,
+      'pk': driverId
+    },
+    success: function (successResponse) {
+      window.location.reload();
+    },
+    error: function (errorResponse) {
+      toastr.error('This driver is in use in other trip requests. Cannot delete.');
+    }
+  });
+});
+
+$(document).on('click', '#button-deactivate-driver', function (e) {
+  e.preventDefault();
+  const driverId = "{{ driver.pk }}";
+  const url = `/drivers/${driverId}/deactivate`;
+  var csrf = getCookie("csrftoken");
+  $.ajax({
+    type: 'POST',
+    url: url,
+    data: {
+      'csrfmiddlewaretoken': csrf,
+      'pk': driverId
+    },
+    success: function (successResponse) {
+      window.location.reload();
+    },
+    error: function (errorResponse) {
+      toastr.error('This driver is in use in other trip requests. Cannot deactivate.');
+    }
+  });
+});
+
+$(document).on('click', '#button-reactivate-driver', function (e) {
+  e.preventDefault();
+  const driverId = "{{ driver.pk }}";
+  const url = `/drivers/${driverId}/reactivate`;
+  var csrf = getCookie("csrftoken");
+  $.ajax({
+    type: 'POST',
+    url: url,
+    data: {
+      'csrfmiddlewaretoken': csrf,
+      'pk': driverId
+    },
+    success: function (successResponse) {
+      window.location.reload();
+    },
+    error: function (errorResponse) {
+      toastr.error('This driver cannot be activated for unknown reasons. Please contact IT about this error.');
+    }
+  });
+});
+
+$(document).on('click', '#button-edit-driver', function (e) {
+  e.preventDefault();
+  const driverId = $(this).attr('data-driver-id');
+  window.location.href = `/drivers/${driverId}/edit`;
+});
+
+$(document).on('click', '.button-request-detail', function (e) {
+  e.preventDefault();
+  const requestId = $(this).attr('data-request-id');
+  window.location.href = `/requests/${requestId}/`;
+});
+
+$(document).on('click', '#button-run-report', function (e) {
+  e.preventDefault();
+  const driverId = "{{ driver.pk }}";
+  const url = `/drivers/report?pk_list=${driverId}`;
+  window.location.href = url;
+});
+</script>
+{% endblock %}
+{% endblock %}

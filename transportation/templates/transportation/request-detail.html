@@ -1,0 +1,604 @@
+{% extends "transportation/base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load django_tables2 %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  {% breadcrumb 'Request List' 'request-list' %}
+  {% breadcrumb 'Request' 'request-detail' triprequest.pk %}
+{% endblock %}
+
+{% block content %}
+<div class="jumbotron pt-5">
+    <h5 class="text-muted">Request #: {{ triprequest.pk }}</h5>
+    <h1 class="display-5">{{ triprequest.title }}</h1>
+    <h5 class="text-muted">Submitted</h4>
+    {{ triprequest.submitted }} by {{ triprequest.requestor.first_name }} {{ triprequest.requestor.last_name }}
+    <p></p>
+    <h5 class="text-muted">Updated</h4>
+    {{ triprequest.updated }} by {{ triprequest.last_updator.first_name }} {{ triprequest.last_updator.last_name }}
+    <hr/>
+    <div class="h5 {% if triprequest.status == 1 %}text-info{% elif triprequest.status == 2 %}text-success{% elif triprequest.status == 3 %}text-danger{% else %}text-muted{% endif %}">{{ triprequest.get_status_display }}</div>
+    {% if request.user.is_moderator or request.user.is_staff %}
+    {% if triprequest.status == 1 %}
+    <div class="btn-group mr-2" role="group" aria-label="Approval">
+        <button id="button-approve-request" data-request-id="{{ triprequest.pk }}" class="btn btn-success" type="button" {% if not triprequest.is_valid %}disabled{% endif %}>
+            <i class="fas fa-fw fa-check"></i>
+        </button>
+        <button id="button-deny-request" data-request-id="{{ triprequest.pk }}" class="btn btn-danger" type="button">
+            <i class="fas fa-fw fa-times"></i>
+        </button>
+        
+    </div>
+    {% endif %}
+    {% if triprequest.is_missing_requirements and triprequest.is_modifiable %}
+      <span class="text-danger mouse">
+          <i class="fas fa-sm fa-fw fa-exclamation-triangle text-danger"></i>
+          <small>{{ triprequest.missing_requirements }}</small>
+      </span>
+    {% endif %}
+    {% if triprequest.is_approved %}
+    <div class="btn-group mr-2" role="group" aria-label="Return">
+        <button id="button-return-vehicle" data-request-id="{{ triprequest.pk }}" class="btn btn-success" type="button" {% if not triprequest.can_return %}disabled{% endif %}>
+            Return Vehicle
+        </button>
+    </div>
+    {% if not triprequest.can_return %}
+    <span class="text-danger mouse">
+      <i class="fas fa-sm fa-fw fa-exclamation-triangle text-danger"></i>
+      <small>{{ triprequest.missing_requirements }}</small>
+    </span>
+    {% endif %}
+    {% elif triprequest.is_returned %}
+    <div class="btn-group mr-2" role="group" aria-label="Finalize">
+        <button id="button-finalize-request" data-request-id="{{ triprequest.pk }}" class="btn btn-success" type="button" {% if not triprequest.can_finalize %}disabled{% endif %}>
+            Finalize
+        </button>
+    </div>
+    {% if not triprequest.is_modifiable %}
+    <span class="text-danger mouse">
+      <i class="fas fa-sm fa-fw fa-exclamation-triangle text-danger"></i>
+      <small>{{ triprequest.missing_requirements }}</small>
+    </span>
+    {% endif %}
+    {% endif %}
+    {% endif %}
+    <hr/>
+    <h7 class="lead mb-4" data-toggle="tooltip" data-placement="right" title="Contact">
+        <i class="far fa-fw fa-id-card mr-2 text-muted"></i>
+        <a href="mailto:{{ triprequest.contact_email }}">{{ triprequest.contact_fullname }}</a> - <small>{{ triprequest.contact_phone }}</small>
+    </h7><br/>
+    <h7 class="lead mb-4" data-toggle="tooltip" data-placement="right" title="Departure/return"><i class="fas fa-fw fa-calendar mr-2 text-muted"></i> {{ triprequest.daterange }}</h7><br/>
+    <h7 class="lead mb-4" data-toggle="tooltip" data-placement="right" title="Destination"><i class="fas fa-fw fa-map mr-2 text-muted"></i> {{ triprequest.destination }}</h7><br/>
+    <h7 class="lead mb-4" data-toggle="tooltip" data-placement="right" title="Driver & Vehicle">
+        <i class="fas fa-fw fa-truck mr-2 text-muted"></i>
+        {% if triprequest.driver is not None %}
+        <a href="{% url 'driver-detail' triprequest.driver.pk %}">{{ triprequest.driver }}</a> - 
+        {% endif %}
+        {% if triprequest.vehicle is not None %}
+        <a href="{% url 'vehicle-detail' triprequest.vehicle.pk %}">{{ triprequest.vehicle }}</a>
+        {% else %}
+        {% if request.user.is_moderator or request.user.is_staff %}
+        <i class="far fa-fw fa-sm fa-question-circle text-danger"></i>
+        {% else %}
+        No vehicle assigned yet
+        {% endif %}
+        {% endif %}
+    </h7><br/>
+  <hr/>
+  <div class="row">
+    <div class="col-8">
+      <div class="btn-toolbar" role="toolbar" aria-label="Toolbar">
+        <span class="btn-group mr-2" role="group" aria-label="Edit">
+          <button id="button-edit-request" data-request-id="{{ triprequest.pk }}" class="btn btn-primary" type="button" {% if not triprequest.is_modifiable %}disabled{% endif %}>
+            {% if user.is_moderator %}Process{% else %}Edit{% endif %}
+          </button>
+        </span>
+          
+        {% if user.is_moderator or user.is_staff %}
+        <span class="btn-group mr-2" role="group" aria-label="Print">
+          <button id="button-print-labels" class="btn btn-info" type="button">Labels</button>
+          <button id="button-print-tickets" class="btn btn-info" type="button">Tickets</button>
+        </span>
+        {% endif %}
+        {% if user.is_staff %}
+        <span class="btn-group" role="group" aria-label="Print">
+          <button id="button-run-report" class="btn btn-info" type="button">Report</button>
+        </span>
+        {% endif %}
+      </div>
+    </div> <!-- col -->
+    <div class="col-4 text-right">
+      {% if user.is_superuser %}
+      <span class="btn-group" role="group" aria-label="Delete">
+        <button id="button-del-request" data-request-id="{{ triprequest.pk }}" class="btn btn-lg btn-danger" type="button">
+          <i class="fas fa-sm fa-trash"></i>
+        </button>
+      </span>
+      {% endif %}
+      {% if triprequest.requestor == request.user and triprequest.is_pending %}
+      <span class="btn-group" role="group" aria-label="Cancel">
+        <button id="button-cancel-request" data-request-id="{{ triprequest.pk }}" class="btn btn-danger" type="button">
+          <i class="fas fa-sm fa-times"></i> Cancel
+        </button>
+      </span>
+      {% endif %}
+    </div> <!-- col -->
+  </div> <!-- row -->
+</div>
+<div class="row px-5">
+  <div class="col-12">
+    <!-- start Administrative-->
+    <div class="ds" id="administrative-section" name="Administrative">
+      <h3 class="ds-title">Administrative</h3>
+      <div class="ds-container">
+        <h5 class="ds-subtitle">Organization</h5>
+        <div class="ds-body">
+          {{ triprequest.org }}
+        </div>
+        <h5 class="ds-subtitle">Department</h5>
+        <div class="ds-body">
+          {{ triprequest.department }}
+        </div>
+        <h5 class="ds-subtitle">Budget</h5>
+        <div class="ds-body">
+          {{ triprequest.budget }}
+        </div>
+        <h5 class="ds-subtitle">
+          Manager
+          {% if triprequest.manager is None %}
+          <span class="text-danger mouse">
+            <i class="fas fa-sm fa-fw fa-exclamation-triangle text-danger"></i>
+            <small>Missing manager</small>
+          </span>
+          {% endif %}
+        </h5>
+        <div class="ds-body">
+          <div class="ds-body-element">
+            {% if triprequest.manager is not None %}
+            {{ triprequest.manager_fullname }}<br/>
+            <a href="mailto:{{ triprequest.manager.email }}">{{ triprequest.manager.email }}</a>
+            {% elif triprequest.is_modifiable %}
+            No manager assigned to this trip request.<br/>
+            <button id="button-assign-manager" data-request-id="{{ triprequest.pk }}" class="btn btn-primary" type="submit">
+              Assign Me
+            </button>
+            {% endif %}
+          </div>
+        </div>
+        <h5 class="ds-subtitle">
+          Contact
+          {% if request.user.is_moderator or request.user.is_staff %}
+          {% if triprequest.contact_email is None or triprequest.contact_phone is None %}
+          <span class="text-danger mouse">
+            <i class="fas fa-sm fa-fw fa-exclamation-triangle text-danger"></i>
+            <small>Missing contact information</small>
+          </span>
+          {% endif %}
+          {% endif %}
+        </h5>
+        <div class="ds-body">
+          <div class="ds-body-element">
+            {{ triprequest.contact_fn }} {{ triprequest.contact_ln }}<br/>
+            {% if triprequest.contact_email is not None %}
+            <a href="mailto:{{ triprequest.contact_email }}">{{ triprequest.contact_email }}</a><br/>
+            {% endif %}
+            {% if triprequest.contact_phone is not None %}
+            {{ triprequest.contact_phone }}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- end Administrative-->
+    <hr/>
+    <!-- start Driver -->
+    <div class="ds" id="driver-section" name="Driver">
+      <h3 class="ds-title">
+        Driver<br/>
+        <span class="text-info mouse">
+          <i class="fas fa-sm fa-fw fa-info-circle"></i>
+          <small>Requested: {{ triprequest.requested_driver }}</small>
+        </span><br/>
+        {% if request.user.is_moderator or request.user.is_staff %}
+          {% if triprequest.driver is None and triprequest.is_modifiable %}
+        <span class="text-danger mouse">
+            <i class="fas fa-sm fa-fw fa-exclamation-triangle text-danger"></i>
+            <small>Missing driver</small>
+        </span>
+          {% endif %}
+        {% endif %}
+      </h3>
+      <div class="ds-container">
+        <div class="ds-body">
+          {% if triprequest.driver is not None %}
+          <div class="ds-body-element">
+            <a href="{% url 'driver-detail' triprequest.driver.pk %}">{{ triprequest.driver_fullname }}</a>
+          </div>
+            {% if triprequest.driver.email is not None %}
+          <div class="ds-body-element">
+            <a href="mailto:{{ triprequest.driver.email }}">{{ triprequest.driver.email }}</a>
+          </div>
+            {% elif request.user.is_moderator and triprequest.is_modifiable %}
+          <div class="ds-body-element">
+            <span class="text-danger mouse">
+              <i class="fas fa-sm fa-fw fa-exclamation-triangle"></i>
+              <small>Missing driver e-mail contact information</small>
+            </span>
+          </div>
+            {% endif %}
+          <div class="ds-body-element">
+            <i class="fas fa-fw {% if triprequest.agreement_accepted %}fa-check-square text-success{% else %}fa-square text-danger{% endif %}"></i>
+            <span>Agreement</span>
+          </div>
+          {% else %}
+          <div class="ds-body-element">
+            <p>No driver assigned to this request</p>
+          </div>
+            {% if request.user.is_moderator or request.user.is_staff %}
+              {% if triprequest.driver is None and recommended_driver is not None %}
+          <div class="ds-body-element">
+            <span>Assign {{recommended_driver}} as driver?</span><br/>
+            <button id="button-assign-requested-driver" class="btn btn-primary">Assign Requested Driver</button>
+          </div>
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <!-- end Driver -->
+    <hr/>
+    <!-- start Vehicle -->
+    <div class="ds" id="vehicle-section" name="Vehicle">
+      <h3 class="ds-title">
+          Vehicle<br/>
+          <span class="text-info mouse">
+              <i class="fas fa-sm fa-fw fa-info-circle"></i>
+              <small>Requested: {{ triprequest.vehicle_type_display }}</small>
+          </span><br/>
+          {% if request.user.is_moderator or request.user.is_staff %}
+          {% if triprequest.vehicle is None and triprequest.is_modifiable %}
+          <span class="text-danger mouse">
+              <i class="fas fa-sm fa-fw fa-exclamation-triangle text-danger"></i>
+              <small>Missing vehicle</small>
+          </span><br/>
+          {% endif %}
+          {% if triprequest.is_completed or triprequest.is_returned or triprequest.is_approved %}
+          {% if triprequest.is_vehicle_clean %}
+          <span class="text-success mouse">
+              <small>Vehicle returned clean</small>
+          </span><br/>
+          {% elif triprequest.is_vehicle_clean is not None %}
+          <span class="text-danger mouse">
+              <i class="fas fa-sm fa-fw fa-exclamation-triangle text-danger"></i>
+              <small>Vehicle not returned clean</small>
+          </span><br/>
+          {% endif %}
+          {% if triprequest.is_vehicle_parked_proper %}
+          <span class="text-success mouse">
+              <small>Vehicle parked facing out of parking space</small>
+          </span><br/>
+          {% elif triprequest.is_vehicle_parked_proper is not None %}
+          <span class="text-danger mouse">
+              <i class="fas fa-sm fa-fw fa-exclamation-triangle text-danger"></i>
+              <small>Vehicle cannot be driven forward from parking space</small>
+          </span><br/>
+          {% endif %}
+          <small class="mouse">Problems: {{ triprequest.vehicle_problems }}</small>
+          {% endif %}
+          {% endif %}
+        </h3>
+      {% if triprequest.vehicle is not None %}
+      {% if request.user.is_moderator or request.user.is_staff %}
+      <a href="{% url 'vehicle-detail' triprequest.vehicle.pk %}">{{ triprequest.vehicle }}</a><br/>
+      {% else %}
+      {{ triprequest.vehicle }}<br/>
+      {% endif %}
+      <i class="fa-fw {% if triprequest.trailer %}fas fa-check-square text-success{% else %}far fa-square{% endif %}"></i> Trailer
+      {% else %}
+      No vehicle assigned to this request
+      {% endif %}
+      {% if request.user.is_moderator or request.user.is_staff %}
+      <div class="ds-container">
+        <h5 class="ds-subtitle">
+          Vehicle Key<br/>
+          {% if triprequest.key_color is None and triprequest.is_modifiable %}
+          <span class="text-danger mouse">
+              <i class="fas fa-sm fa-fw fa-exclamation-triangle text-danger"></i>
+              <small>Missing key color</small>
+          </span>
+          {% endif %}
+        </h5>
+        <div class="ds-body">
+          <span class="ds-body-element ds-spaced-120px"><span>Color</span>:</span>{{ triprequest.get_key_color_display }}</br>
+        </div>
+        <h5 class="ds-subtitle">
+          Card<br/>
+          {% if triprequest.card_num is None and triprequest.is_modifiable %}
+          <span class="text-danger mouse">
+              <i class="fas fa-sm fa-fw fa-exclamation-triangle text-danger"></i>
+              <small>Missing card #</small>
+          </span>
+          {% endif %}
+        </h5>
+        <div class="ds-body">
+          <span class ="ds-body-element ds-spaced-120px"><span>#</span>:</span>{{ triprequest.card_num }}
+        </div>
+        <h5 class="ds-subtitle">Fuel Cost</h5>
+        <div class="ds-body">
+          <div class="ds-body-element">{{ triprequest.fuel_cost_display }}</div>
+        </div>
+        <h5 class="ds-subtitle">Mileage</h5>
+        <div class="ds-body">
+          <span class ="ds-body-element ds-spaced-120px">
+            <span>Estimate</span>:</span>{{ triprequest.mileage_est }}<br/>
+          </span>
+          <span class="ds-body-element ds-spaced-120px">
+            <span>Actual</span>:</span>{% if triprequest.mileage_act is not None %}{{ triprequest.mileage_act }}{% elif triprequest.is_approved %}<span class="text-danger mouse">
+            <i class="fas fa-sm fa-fw fa-exclamation-triangle text-danger"></i>
+            <small>Missing actual mileage</small>
+          </span>{% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    <!-- end Vehicle -->
+    <hr/>
+    <!-- start Trip -->
+    <div class="ds" id="trip-section" name="Trip">
+      <h3 class="ds-title">Trip</h3>
+      <div class="ds-container">
+        <h5 class="ds-subtitle">Departure<br/></h5>
+        <div class="ds-body">
+          <div class="ds-body-element">
+            <span class="ds-body-element ds-spaced-120px"><span>Estimate</span>:</span>{{ triprequest.depart_est }}<br/>
+            <!--<span class="ds-body-element ds-spaced-120px"><span>Actual</span>:</span>{% if triprequest.depart_act is not None %}{{ triprequest.depart_act }}{% elif triprequest.is_approved %}<span class="text-danger mouse"><i class="fas fa-sm fa-fw fa-exclamation-triangle text-danger"></i><small>Missing actual departure time</small></span>{% endif %}-->
+          </div>
+        </div>
+        <h5 class="ds-subtitle">Return<br/></h5>
+        <div class="ds-body">
+          <div class="ds-body-element">
+            <span class="ds-body-element ds-spaced-120px"><span>Estimate</span>:</span>{{ triprequest.return_est }}<br/>
+            <!--<span class="ds-body-element ds-spaced-120px"><span>Actual</span>:</span>{% if triprequest.depart_act is not None %}{{ triprequest.depart_act }}{% elif triprequest.is_approved %}<span class="text-danger mouse"><i class="fas fa-sm fa-fw fa-exclamation-triangle text-danger"></i><small>Missing actual departure time</small></span>{% endif %}-->
+          </div>
+        </div>
+        <h5 class="ds-subtitle">Party Count</h5>
+        <div class="ds-body">
+          <div class="ds-body-element">
+            {{ triprequest.party_count }}
+          </div>
+        </div>
+        <h5 class="ds-subtitle">Destination</h5>
+        <div class="ds-body">
+          <div class="ds-body-element">
+            {{ triprequest.destination }}
+          </div>
+        </div>
+        <h5 class="ds-subtitle">Purpose</h5>
+        <div class="ds-body">
+          <div class="ds-body-element">
+            {{ triprequest.purpose }}
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- end Trip -->
+    <hr/>
+  </div>
+</div>
+{% block scripts %}
+<script>
+function getCookie(name) {
+  let value = "; " + document.cookie;
+  const parts = value.split("; " + name + "=");
+  if (parts.length == 2) return parts.pop().split(";").shift();
+}
+
+$(document).on('click', '#button-edit-request', function (e) {
+  e.preventDefault();
+  const requestId = "{{ triprequest.pk }}";
+  window.location.href = `/requests/${requestId}/edit`;
+});
+
+$(document).on('click', '#button-del-request', function (e) {
+  e.preventDefault();
+  const requestId = $(this).attr('data-request-id');
+  const deleteUrl = `/requests/${requestId}/delete`;
+  var csrf = getCookie("csrftoken");
+  $.ajax({
+    type: 'POST',
+    url: deleteUrl,
+    data: {
+      'csrfmiddlewaretoken': csrf,
+      'pk': requestId
+    },
+    success: function (successResponse) {
+      window.location = '/requests/';
+    },
+    error: function (errorResponse) {
+      toastr.error('This request cannot be deleted for unknown reasons. Please contact IT about this.');
+    }
+  });
+});
+
+$(document).on('click', '#button-deny-request', function (e) {
+  e.preventDefault();
+  const requestId = "{{ triprequest.pk }}";
+  const approvalUrl = `/requests/${requestId}/deny`;
+  var csrf = getCookie("csrftoken");
+  $.ajax({
+    type: 'POST',
+    url: approvalUrl,
+    data: {
+      'csrfmiddlewaretoken': csrf,
+      'pk': requestId
+    },
+    success: function (successResponse) {
+      window.location.reload();
+    },
+    error: function (errorResponse) {
+      toastr.error('This request cannot be denied for unknown reasons. Please contact IT about this.');
+    }
+  });
+});
+
+$(document).on('click', '#button-approve-request', function (e) {
+  e.preventDefault();
+  const requestId = "{{ triprequest.pk }}";
+  const approvalUrl = `/requests/${requestId}/approve`;
+  var csrf = getCookie("csrftoken");
+  $.ajax({
+    type: 'POST',
+    url: approvalUrl,
+    data: {
+      'csrfmiddlewaretoken': csrf,
+      'pk': requestId
+    },
+    success: function (successResponse) {
+      window.location.reload();
+    },
+    error: function (errorResponse) {
+      toastr.error('This request cannot be approved for unknown reasons. Please contact IT about this.');
+    }
+  });
+});
+
+$(document).on('click', '#button-assign-manager', function (e) {
+  e.preventDefault();
+  const requestId = "{{ triprequest.pk }}";
+  const approvalUrl = `/requests/${requestId}/assign-self`;
+  var csrf = getCookie("csrftoken");
+  $.ajax({
+    type: 'POST',
+    url: approvalUrl,
+    data: {
+      'csrfmiddlewaretoken': csrf,
+      'pk': requestId
+    },
+    success: function (successResponse) {
+      window.location.reload();
+    },
+    error: function (errorResponse) {
+      toastr.error('This request cannot be assigned a manager for unknown reasons. Please contact IT about this.');
+    }
+  });
+});
+
+$(document).on('click', '#button-cancel-request', function (e) {
+  e.preventDefault();
+  const requestId = "{{ triprequest.pk }}";
+  const approvalUrl = `/requests/${requestId}/cancel`;
+  var csrf = getCookie("csrftoken");
+  $.ajax({
+    type: 'POST',
+    url: approvalUrl,
+    data: {
+      'csrfmiddlewaretoken': csrf,
+      'pk': requestId
+    },
+    success: function (successResponse) {
+      window.location.reload();
+    },
+    error: function (errorResponse) {
+      toastr.error('This request cannot be cancelled for unknown reasons. Please contact IT about this.');
+    }
+  });
+});
+
+$(document).on('click', '#button-print-labels', function (e) {
+  e.preventDefault();
+  const requestId = "{{ triprequest.pk }}";
+  const url = `/requests/print/labels?pk_list=${requestId}`;
+  window.location.href = url;
+});
+
+$(document).on('click', '#button-print-tickets', function (e) {
+  e.preventDefault();
+  const requestId = "{{ triprequest.pk }}";
+  const url = `/requests/print/tickets?pk_list=${requestId}`;
+  window.location.href = url;
+});
+
+$(document).on('click', '#button-return-vehicle', function (e) {
+  e.preventDefault();
+  const requestId = "{{ triprequest.pk }}";
+  const url = `/requests/${requestId}/return-vehicle`;
+  var csrf = getCookie("csrftoken");
+  $.ajax({
+    type: 'POST',
+    url: url,
+    data: {
+      'csrfmiddlewaretoken': csrf,
+      'pk': requestId
+    },
+    success: function (successResponse) {
+      window.location.reload();
+    },
+    error: function (errorResponse) {
+      toastr.error('This request cannot be marked as returned for unknown reasons. Please contact IT about this.');
+    }
+  });
+});
+
+$(document).on('click', '#button-finalize-request', function (e) {
+  e.preventDefault();
+  const requestId = "{{ triprequest.pk }}";
+  const url = `/requests/${requestId}/finalize`;
+  var csrf = getCookie("csrftoken");
+  $.ajax({
+    type: 'POST',
+    url: url,
+    data: {
+      'csrfmiddlewaretoken': csrf,
+      'pk': requestId
+    },
+    success: function (successResponse) {
+      window.location.reload();
+    },
+    error: function (errorResponse) {
+      toastr.error('This request cannot be finalized for unknown reasons. Please contact IT about this.');
+    }
+  });
+});
+
+$(document).on('click', '#button-run-report', function (e) {
+  e.preventDefault();
+  const requestId = "{{ triprequest.pk }}";
+  const url = `/requests/report?pk_list=${requestId}`;
+  window.location.href = url;
+});
+
+{% if request.user.is_moderator or request.user.is_staff %}
+  {% if triprequest.driver is None and recommended_driver is not None %}
+$(document).on('click', '#button-assign-requested-driver', function (e) {
+  e.preventDefault();
+  $("#button-assign-requested-driver").prop("disabled",true);
+  const requestId = "{{ triprequest.pk }}";
+  const driverId = "{{ recommended_driver.pk }}";
+  const url = `/requests/${requestId}/update`;
+  $.ajax({
+    type: 'POST',
+    url: url,
+    data: {
+      csrfmiddlewaretoken: '{{ csrf_token }}',
+      driver: driverId
+    },
+    success: (response) => {
+      setInterval('location.reload()', 1000);
+    },
+    error: (response) => {
+      toastr.error('This driver is in use in other trip requests. Cannot assign to this ticket in this time frame.');
+    }
+  });
+});
+  {% endif %}
+{% endif %}
+</script>
+{% endblock %}
+{% endblock %}

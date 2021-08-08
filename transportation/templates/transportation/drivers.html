@@ -1,0 +1,164 @@
+{% extends "transportation/base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load django_tables2 %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  {% breadcrumb 'Driver List' 'driver-list' %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="jumbotron mt-4">
+    <h1>Drivers</h1>
+    <p>A list of all drivers</p>
+  </div>
+  <div class="card border border-light shadow mb-4">
+    <div class="card-header bg-gradient-light border-0">
+      <div class="row">
+        <div class="col-8">
+            <div class="btn-toolbar" role="toolbar" aria-label="Toolbar">
+                <span class="btn-group mr-2" role="group" aria-label="Create">
+                    <button id="button-new-driver" data-request-id="{{ driver.pk }}" class="btn btn-success" type="submit">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </span>
+                {% if user.is_staff %}
+                <span class="btn-group" role="group" aria-label="Reporting">
+                    <button id="button-run-report" class="btn btn-info" type="submit" disabled>Report</button>
+                </span>
+                {% endif %}
+            </div>
+        </div> <!-- col -->
+        {% if user.is_superuser %}
+        <div class="col-4 text-right">
+            <span class="btn-group" role="group" aria-label="Delete">
+            <button id="button-del-driver" data-request-id="{{ driver.pk }}" class="btn btn-lg btn-danger" type="submit" disabled>
+                <i class="fas fa-sm fa-trash"></i>
+            </button>
+            </span>
+        </div> <!-- col -->
+        {% endif %}
+      </div> <!-- row -->
+      <hr/>
+      <div class="row mt-3">
+        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-xs-12">
+          {{ filter.form.status.label_tag }}
+          {{ filter.form.status|add_class:'form-control' }}
+        </div> <!-- col -->
+        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-xs-12">
+          {{ filter.form.type.label_tag }}
+          {{ filter.form.type|add_class:'form-control' }}
+        </div> <!-- col -->
+      </div> <!-- row -->
+    </div> <!-- card-header -->
+    <div class="card-body p-0 m-0">
+      {% render_table table %}
+    </div>
+  </div>
+</div>
+{% block scripts %}
+<script type="text/javascript">
+  var checkboxes = $("input[type='checkbox']"),
+    deleteButton = $("button[id='button-del-driver']"),
+    reportButton = $("button[id='button-run-report']");
+
+  checkboxes.click(function () {
+    deleteButton.attr("disabled", !checkboxes.is(":checked"));
+    reportButton.attr("disabled", !checkboxes.is(":checked"));
+  });
+</script>
+<script>
+function getCookie(name) {
+  var value = "; " + document.cookie;
+  var parts = value.split("; " + name + "=");
+  if (parts.length == 2) return parts.pop().split(";").shift();
+}
+
+$(document).on('click', '#button-new-driver', function (e) {
+  window.location.href = "{% url 'new-driver' %}";
+});
+
+$(document).on('click', '#button-run-report', function (e) {
+  e.preventDefault();
+  const tableControl = document.getElementById('table');
+  const csrf = getCookie("csrftoken");
+  let requestIds = [];
+
+  $('input:checkbox:checked', tableControl).each(function () {
+    const row = $(this).closest('tr');
+    const requestId = row.data('id');
+    requestIds.push(requestId);
+  });
+
+  const idListString = requestIds.join(',');
+  const url = `/drivers/report?pk_list=${idListString}`;
+  window.location.href = url;
+});
+
+$(document).on('click', '.button-driver-detail', function (e) {
+  e.preventDefault();
+  const driverId = $(this).closest('tr').data('id');
+  window.location.href = `/drivers/${driverId}`;
+});
+
+$(document).on('click', '#button-del-driver', function (e) {
+  e.preventDefault();
+  var tableControl = document.getElementById('table');
+  var csrf = getCookie("csrftoken");
+  $('input:checkbox:checked', tableControl).each(function () {
+    var row = $(this).closest('tr');
+    const driverId = row.data('id');
+    const url = "{% url 'delete-driver' pk=0 %}".replace('0', driverId.toString());
+    $.ajax({
+      type: 'POST',
+      url: url,
+      dataType: 'html',
+      data: {
+        'csrfmiddlewaretoken': csrf,
+      },
+      success: function (successResponse) {
+        row.remove();
+      },
+      error: function (errorResponse) {
+        toastr.error('This driver is in use in other trip requests. Cannot delete.');
+      }
+    })
+  });
+});
+
+/**
+ * http://stackoverflow.com/a/10997390/11236
+ */
+function updateURLParameter(url, param, paramVal){
+    var newAdditionalURL = "";
+    var tempArray = url.split("?");
+    var baseURL = tempArray[0];
+    var additionalURL = tempArray[1];
+    var temp = "";
+    if (additionalURL) {
+        tempArray = additionalURL.split("&");
+        for (var i=0; i<tempArray.length; i++){
+            if(tempArray[i].split('=')[0] != param){
+                newAdditionalURL += temp + tempArray[i];
+                temp = "&";
+            }
+        }
+    }
+
+    var rows_txt = temp + "" + param + "=" + paramVal;
+    return baseURL + "?" + newAdditionalURL + rows_txt;
+}
+
+$("#id_status").change(function () {
+  const url = updateURLParameter(window.location.href, 'status', $(this).val());
+  window.location.href = url;
+});
+</script>
+{% endblock %}
+{% endblock %}

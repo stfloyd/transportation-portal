@@ -1,0 +1,62 @@
+.main-head{
+    height: 150px;
+    background: #FFF;
+   
+}
+
+.sidenav {
+    height: 100%;
+    background-color: #000;
+    overflow-x: visible;
+    padding-top: 20px;
+}
+
+.login-form {
+    height: 100%;
+    padding-top: 20px;
+    margin-top: 20%;
+    max-width: 480px;
+}
+
+.login-main-text {
+    margin-top: 20%;
+    padding: 60px;
+    color: #fff;
+}
+
+.login-main-text h2{
+    font-weight: 300;
+}
+
+/* On screens that are 768px wide or more, go from four columns to two columns */
+@media screen and (min-width: 992px) {
+    .login-form {
+        margin-top: 30%;
+        margin-left: 10%;
+    }
+}
+
+/* On screens that are 768px wide or more, go from four columns to two columns */
+@media screen and (min-width: 768px) {
+    .row {
+        position: fixed;
+        height: 100%;
+        width: 100%;
+        flex-direction: row;
+    }
+
+    .login-form {
+        margin-top: 30%;
+    }
+}
+
+/* On screens that are 600px wide or less, make the columns stack on top of each other instead of next to each other */
+@media screen and (max-width: 768px) {
+    .row {
+        flex-direction: column;
+    }
+
+    .login-form {
+        margin-top: 20px;
+    }
+}

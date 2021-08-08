@@ -1,0 +1,96 @@
+{% extends "transportation/base.html" %}
+
+{% load i18n %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="jumbotron mt-4">
+    <h1 class="display-5" class="lead">Welcome {{ user.first_name }} {{ user.last_name }}!</h1>
+    <p id="date"></p>
+  </div>
+  <hr/>
+  <h3>Quick Actions</h3>
+  <div class="row">
+    <div class="col-lg-4 col-md-6 col-sm-12">
+      <button type="button" onclick="createNewRequest()" class="btn btn-primary btn-tile text-left">
+        <h3 class="tile-title">New Trip Request</h3>
+        <p>Request approval for a trip</p>
+      </button>
+    </div>
+    {% if request.user.is_moderator or request.user.is_staff %}
+    <div class="col-lg-4 col-md-6 col-sm-12">
+      <button type="button" onclick="createNewVehicle()" class="btn btn-primary btn-tile text-left">
+        <h3 class="tile-title">New Vehicle</h3>
+        <p>Add a new vehicle to the portal</p>
+      </button>
+    </div>
+    <div class="col-lg-4 col-md-6 col-sm-12">
+      <button type="button" onclick="createNewDriver()" class="btn btn-primary btn-tile text-left">
+        <h3 class="tile-title">New Driver</h3>
+        <p>Add a new driver to the portal</p>
+      </button>
+    </div>
+    {% endif %}
+  </div>
+  {% if request.user.is_moderator or request.user.is_staff %}
+  <hr/>
+  <h3>Manage</h3>
+  <div class="row">
+    <div class="col-lg-4 col-md-6 col-sm-12">
+      <button type="button" onclick="goToRequests()" class="btn btn-info btn-tile text-left">
+        <h3 class="tile-title">View Trip Requests</h3>
+        <p>View and manage all trip requests</p>
+      </button>
+    </div>
+    <div class="col-lg-4 col-md-6 col-sm-12">
+      <button type="button" onclick="goToVehicles()" class="btn btn-info btn-tile text-left">
+        <h3 class="tile-title">View Vehicles</h3>
+        <p>View and manage all vehicles</p>
+      </button>
+    </div>
+    <div class="col-lg-4 col-md-6 col-sm-12">
+      <button type="button" onclick="goToDrivers()" class="btn btn-info btn-tile text-left">
+        <h3 class="tile-title">View Drivers</h3>
+        <p>View and manage all drivers</p>
+      </button>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% block scripts %}
+<script>
+  document.getElementById("date").innerHTML = `Today is ${moment(Date()).format('dddd, MMMM Do YYYY, h:mm A')}`;
+
+  function createNewRequest() {
+    window.location = "/requests/new"
+  }
+
+  {% if request.user.is_moderator or request.user.is_staff %}
+  function createNewVehicle() {
+    window.location = "/vehicles/new"
+  }
+
+  function createNewDriver() {
+    window.location = "/drivers/new"
+  }
+
+  function goToRequests() {
+    window.location = "/requests/"
+  }
+
+  function goToVehicles() {
+    window.location = "/vehicles/"
+  }
+
+  function goToDrivers() {
+    window.location = "/drivers/"
+  }
+  {% endif %}
+</script>
+{% endblock %}
+{% endblock %}

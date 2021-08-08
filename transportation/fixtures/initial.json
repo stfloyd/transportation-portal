@@ -1,0 +1,14 @@
+[{
+    "model": "transportation.setting",
+    "pk": 1,
+    "fields": {
+        "key": "default_manager_id",
+        "value": "1"
+    }
+}, {
+    "model": "transportation.organization",
+    "pk": 1,
+    "fields": {
+        "name": "Default Organization"
+    }
+}]

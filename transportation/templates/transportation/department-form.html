@@ -1,0 +1,32 @@
+{% extends "transportation/base.html" %}
+
+{% load static %}
+
+{% block content %}
+{% load i18n %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load django_tables2 %}
+<div class="container">
+  <div class="jumbotron">
+    <h1>{{ pagetitle }}</h1>
+    <p>Please fill out all the required fields.</p>
+  </div>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <form id="department-form" method="post" novalidate>
+            {% csrf_token %}
+            {{ form|crispy }}
+            <button id="department-submit-button" type="submit" name="submit" class="btn btn-primary">
+                Submit
+            </button>
+            <button id="department-cancel-button" type="cancel" name="cancel" class="btn btn-danger">
+                Cancel
+            </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

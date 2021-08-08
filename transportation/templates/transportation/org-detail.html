@@ -1,0 +1,222 @@
+{% extends "transportation/base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load django_tables2 %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  {% breadcrumb 'Organization List' 'org-list' %}
+  {% breadcrumb 'Organization' 'org-detail' org.pk %}
+{% endblock %}
+
+{% block content %}
+<div class="jumbotron pt-5">
+  <h1>{{ org.name }}</h1>
+  <hr/>
+  <div class="row">
+    <div class="col-8">
+        <div class="btn-toolbar" role="toolbar" aria-label="Toolbar">
+            <span class="btn-group mr-2" role="group" aria-label="Edit">
+                <button id="button-edit-org" data-org-id="{{ org.pk }}" class="btn btn-primary btn-primary" type="submit">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </span>
+            {% if user.is_staff %}
+            <span class="btn-group" role="group" aria-label="Print">
+                <button id="button-run-report" class="btn btn-info" type="submit">Report</button>
+            </span>
+            {% endif %}
+        </div>
+    </div> <!-- col -->
+    {% if user.is_superuser %}
+    <div class="col-4 text-right">
+        <span class="btn-group" role="group" aria-label="Delete">
+        <button id="button-del-org" data-org-id="{{ org.pk }}" class="btn btn-lg btn-danger" type="submit">
+            <i class="fas fa-sm fa-trash"></i>
+        </button>
+        </span>
+    </div> <!-- col -->
+    {% endif %}
+  </div> <!-- row -->
+</div>
+<div class="row px-5">
+  <div class="col-12">
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item">
+          <a class="nav-link active" id="departments-tab" data-toggle="tab" href="#departments" role="tab" aria-controls="departments" aria-selected="true">Departments</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="budgets-tab" data-toggle="tab" href="#budgets" role="tab" aria-controls="budgets" aria-selected="false">Budgets</a>
+        </li>
+      </ul>
+      <div class="tab-content" id="org-tabs">
+        <div class="tab-pane fade show active" id="departments" role="tabpanel" aria-labelledby="departments-tab">
+            <div class="row pt-4">
+                <div class="col-12">
+                    <button id="button-new-department" class="btn btn-primary btn-primary" type="submit"><i class="fas fa-plus"></i></button>
+                    <button id="button-del-department" class="btn btn-primary-red btn-danger" type="submit" disabled><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    {% render_table departments_table %}
+                </div>
+            </div>
+        </div>
+        <div class="tab-pane fade" id="budgets" role="tabpanel" aria-labelledby="budgets-tab">
+            <div class="row pt-4">
+                <div class="col-12">
+                    <button id="button-new-budget" class="btn btn-primary btn-primary" type="submit"><i class="fas fa-plus"></i></button>
+                    <button id="button-del-budget" class="btn btn-primary-red btn-danger" type="submit" disabled><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    {% render_table budgets_table %}
+                </div>
+            </div>
+        </div>
+      </div>
+  </div>
+</div>
+  
+</div>
+{% block scripts %}
+<script type="text/javascript">
+let budgetCheckboxes = $("#budgets input[type='checkbox']");
+let deptCheckboxes = $("#departments input[type='checkbox']");
+let deleteDeptButton = $("button[id='button-del-department']");
+let deleteBudgetButton = $("button[id='button-del-budget']");
+
+budgetCheckboxes.click(function () {
+    deleteBudgetButton.attr("disabled", !budgetCheckboxes.is(":checked"));
+});
+
+deptCheckboxes.click(function () {
+    deleteDeptButton.attr("disabled", !deptCheckboxes.is(":checked"));
+});
+</script>
+<script>
+function getCookie(name) {
+  let value = "; " + document.cookie;
+  const parts = value.split("; " + name + "=");
+  if (parts.length == 2) return parts.pop().split(";").shift();
+}
+
+$(document).on('click', '#button-edit-org', function (e) {
+  e.preventDefault();
+  const orgId = $(this).attr('data-org-id');
+  window.location.href = `/orgs/${orgId}/edit`;
+});
+
+$(document).on('click', '#button-run-report', function (e) {
+  e.preventDefault();
+  const orgId = "{{ org.pk }}";
+  const url = `/orgs/report?pk_list=${orgId}`;
+  window.location.href = url;
+});
+
+$(document).on('click', '#button-new-department', function (e) {
+  const orgId = "{{ org.pk }}";
+  window.location.href = `/orgs/${orgId}/departments/new`;
+});
+
+$(document).on('click', '.button-edit-department', function (e) {
+  e.preventDefault();
+  const orgId = "{{ prg.pk }}";
+  const departmentId = $(this).closest('tr').data('id');
+  window.location.href = `/orgs/${orgId}/departments/${departmentId}/edit`;
+});
+
+$(document).on('click', '#button-del-department', function (e) {
+  e.preventDefault();
+  const tableControl = document.getElementById('table');
+  const csrf = getCookie("csrftoken");
+  $('#departments input:checkbox:checked', tableControl).each(function () {
+    let row = $(this).closest('tr');
+    const orgId = "{{ org.pk }}";
+    const departmentId = row.data('id');
+    const deleteUrl = `/orgs/${orgId}/departments/${departmentId}/delete`;
+    $.ajax({
+      type: 'POST',
+      url: deleteUrl,
+      dataType: 'html',
+      data: {
+        'csrfmiddlewaretoken': csrf,
+      },
+      success: function (successResponse) {
+        row.remove();
+      },
+      error: function (errorResponse) {
+        toastr.error('This organization is in use in other trip requests and/or vehicles. Cannot delete.');
+      }
+    })
+  });
+});
+
+$(document).on('click', '#button-del-org', function (e) {
+  e.preventDefault();
+  const tableControl = document.getElementById('table');
+  const csrf = getCookie("csrftoken");
+  const orgId = $(this).attr('data-org-id');
+  const deleteUrl = `/orgs/${orgId}/delete`;
+  $.ajax({
+    type: 'POST',
+    url: deleteUrl,
+    dataType: 'html',
+    data: {
+      'csrfmiddlewaretoken': csrf,
+    },
+    success: function (successResponse) {
+      window.location.href = '/orgs/';
+    },
+    error: function (errorResponse) {
+      toastr.error('This organization is in use in other trip requests and/or vehicles. Cannot delete.');
+    }
+  })
+});
+
+$(document).on('click', '#button-new-budget', function (e) {
+  const orgId = "{{ org.pk }}";
+  window.location.href = `/orgs/${orgId}/budgets/new`;
+});
+
+$(document).on('click', '.button-edit-budget', function (e) {
+  e.preventDefault();
+  const orgId = "{{ prg.pk }}";
+  const budgetId = $(this).closest('tr').data('id');
+  window.location.href = `/orgs/${orgId}/budgets/${budgetId}/edit`;
+});
+
+$(document).on('click', '#button-del-budget', function (e) {
+  e.preventDefault();
+  const tableControl = document.getElementById('table');
+  const csrf = getCookie("csrftoken");
+  $('#budgets input:checkbox:checked', tableControl).each(function () {
+    let row = $(this).closest('tr');
+    const orgId = "{{ org.pk }}";
+    const budgetId = row.data('id');
+    const deleteUrl = `/orgs/${orgId}/budgets/${budgetId}/delete`;
+    $.ajax({
+      type: 'POST',
+      url: deleteUrl,
+      dataType: 'html',
+      data: {
+        'csrfmiddlewaretoken': csrf,
+      },
+      success: function (successResponse) {
+        row.remove();
+      },
+      error: function (errorResponse) {
+        toastr.error('This budget is in use in other trip requests and/or vehicles. Cannot delete.');
+      }
+    })
+  });
+});
+</script>
+{% endblock %}
+{% endblock %}

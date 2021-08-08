@@ -1,0 +1,156 @@
+{% extends "transportation/base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load django_tables2 %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  {% breadcrumb 'Organization List' 'org-list' %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="jumbotron mt-4">
+    <h1>Organizations</h1>
+    <p>A list of all organizations</p>
+  </div>
+  <div class="card border border-light shadow mb-4">
+    <div class="card-header bg-gradient-light border-0">
+      <div class="row">
+        <div class="col-8">
+            <div class="btn-toolbar" role="toolbar" aria-label="Toolbar">
+                <span class="btn-group mr-2" role="group" aria-label="Create">
+                    <button id="button-new-org" class="btn btn-success" type="submit">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </span>
+                {% if user.is_staff %}
+                <span class="btn-group" role="group" aria-label="Reporting">
+                    <button id="button-run-report" class="btn btn-info" type="submit" disabled>Report</button>
+                </span>
+                {% endif %}
+            </div>
+        </div> <!-- col -->
+        {% if user.is_superuser %}
+        <div class="col-4 text-right">
+            <span class="btn-group" role="group" aria-label="Delete">
+            <button id="button-del-org" data-request-id="{{ org.pk }}" class="btn btn-lg btn-danger" type="submit" disabled>
+                <i class="fas fa-sm fa-trash"></i>
+            </button>
+            </span>
+        </div> <!-- col -->
+        {% endif %}
+      </div> <!-- row -->
+    </div> <!-- card-header -->
+    <div class="card-body p-0 m-0">
+      {% render_table table %}
+    </div>
+  </div>
+</div>
+{% block scripts %}
+<script type="text/javascript">
+  var checkboxes = $("input[type='checkbox']"),
+    deleteButton = $("button[id='button-del-org']"),
+    reportButton = $("button[id='button-run-report']");
+
+  checkboxes.click(function () {
+    deleteButton.attr("disabled", !checkboxes.is(":checked"));
+    reportButton.attr("disabled", !checkboxes.is(":checked"));
+  });
+</script>
+<script>
+$(document).ready(function() {
+  $('.prev i').removeClass();
+  $('.prev i').addClass("fas fa-chevron-left");
+
+  $('.next i').removeClass();
+  $('.next i').addClass("fas fa-chevron-right");
+});
+
+function getCookie(name) {
+  var value = "; " + document.cookie;
+  var parts = value.split("; " + name + "=");
+  if (parts.length == 2) return parts.pop().split(";").shift();
+}
+
+$(document).on('click', '#button-new-org', function (e) {
+  window.location.href = "{% url 'new-org' %}";
+});
+
+$(document).on('click', '#button-run-report', function (e) {
+  e.preventDefault();
+  const tableControl = document.getElementById('table');
+  const csrf = getCookie("csrftoken");
+  let requestIds = [];
+
+  $('input:checkbox:checked', tableControl).each(function () {
+    const row = $(this).closest('tr');
+    const requestId = row.data('id');
+    requestIds.push(requestId);
+  });
+
+  const idListString = requestIds.join(',');
+  const url = `/orgs/report?pk_list=${idListString}`;
+  window.location.href = url;
+});
+
+$(document).on('click', '.button-org-detail', function (e) {
+  e.preventDefault();
+  var orgId = $(this).closest('tr').data('id');
+  window.location.href = `/orgs/${orgId}`;
+});
+
+$(document).on('click', '#button-del-org', function (e) {
+  e.preventDefault();
+  var tableControl = document.getElementById('table');
+  var csrf = getCookie("csrftoken");
+  $('input:checkbox:checked', tableControl).each(function () {
+    var row = $(this).closest('tr');
+    var orgId = row.data('id');
+    var url_mask = "{% url 'delete-org' pk=0 %}".replace('0', orgId.toString());
+    $.ajax({
+      type: 'POST',
+      url: url_mask,
+      dataType: 'html',
+      data: {
+        'csrfmiddlewaretoken': csrf,
+      },
+      success: function (successResponse) {
+        row.remove();
+      },
+      error: function (errorResponse) {
+        toastr.error('This organization is in use in other trip requests and/or vehicles. Cannot delete.');
+      }
+    })
+  });
+});
+
+/**
+ * http://stackoverflow.com/a/10997390/11236
+ */
+function updateURLParameter(url, param, paramVal){
+    var newAdditionalURL = "";
+    var tempArray = url.split("?");
+    var baseURL = tempArray[0];
+    var additionalURL = tempArray[1];
+    var temp = "";
+    if (additionalURL) {
+        tempArray = additionalURL.split("&");
+        for (var i=0; i<tempArray.length; i++){
+            if(tempArray[i].split('=')[0] != param){
+                newAdditionalURL += temp + tempArray[i];
+                temp = "&";
+            }
+        }
+    }
+
+    var rows_txt = temp + "" + param + "=" + paramVal;
+    return baseURL + "?" + newAdditionalURL + rows_txt;
+}
+</script>
+{% endblock %}
+{% endblock %}

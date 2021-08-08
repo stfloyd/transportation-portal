@@ -1,0 +1,16 @@
+version: "3.9"
+   
+services:
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SUPERUSER_USERNAME=${TP_SUPERUSER_NAME}
+      - DJANGO_SUPERUSER_EMAIL=${TP_SUPERUSER_EMAIL}
+      - DJANGO_SUPERUSER_PASSWORD=${TP_SUPERUSER_PASS}
+    volumes:
+      - .:/usr/src/transportation
+    ports:
+      - "8000:8000"

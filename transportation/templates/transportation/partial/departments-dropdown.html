@@ -1,0 +1,8 @@
+<option value="">---------</option>
+{% for org in orgs %}
+<optgroup label="{{org.name}}">
+    {% for department in org.departments.all %}
+    <option value="{{ department.pk }}">{{ department.name }}</option>
+    {% endfor %}
+</optgroup>
+{% endfor %}

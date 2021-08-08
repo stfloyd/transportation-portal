@@ -1,0 +1,47 @@
+{% extends "transportation/base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load django_tables2 %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  {% breadcrumb 'Driver List' 'driver-list' %}
+  {% if vehicle is not None %}
+  {% breadcrumb 'Driver' 'driver-detail' driver.pk %}
+  {% breadcrumb 'Edit' 'edit-driver' driver.pk %}
+  {% else %}
+  {% breadcrumb 'Create' 'new-driver' %}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="jumbotron">
+    <h1>{{ pagetitle }}</h1>
+    {% if driver is not None %}
+    <a href="{% url 'driver-detail' driver.pk %}">{{ driver }}</a>
+    {% endif %}
+    <p>Please fill out all the required fields.</p>
+  </div>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <form id="driver-form" method="post" novalidate>
+            {% csrf_token %}
+            {{ form|crispy }}
+            <button id="driver-submit-button" type="submit" name="submit" class="btn btn-primary">
+                Submit
+            </button>
+            <button id="driver-cancel-button" type="cancel" name="cancel" class="btn btn-danger">
+                Cancel
+            </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

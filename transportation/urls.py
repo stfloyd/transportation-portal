@@ -1,0 +1,83 @@
+from django.urls import include, path
+
+from transportation import views, models
+
+
+urlpatterns = [
+    path('auth/', include('rest_framework_social_oauth2.urls')),
+    path('', include('social_django.urls', namespace='social')),
+
+    path('sign-in/', views.LoginView.as_view(), name='sign-in'),
+    path('sign-out/', views.sign_out, name='sign-out'),
+
+    path('orgs/', views.OrganizationsView.as_view(), name='org-list'),
+    path('orgs/report', views.run_org_report, name='org-report'),
+    path('orgs/new', views.CreateOrganizationView.as_view(), name='new-org'),
+    path('orgs/delete', views.delete_orgs, name='delete-orgs'),
+    path('orgs/<int:pk>/', views.OrganizationDetailView.as_view(), name='org-detail'),
+    path('orgs/<int:pk>/edit', views.UpdateOrganizationView.as_view(), name='edit-org'),
+    path('orgs/<int:pk>/delete', views.delete_org, name='delete-org'),
+    path('orgs/<int:org_pk>/budgets', views.BudgetsView.as_view(), name='budget-list'),
+    path('orgs/<int:org_pk>/budgets/new', views.CreateBudgetView.as_view(), name='new-budget'),
+    path('orgs/<int:org_pk>/budgets/delete', views.delete_budgets, name='delete-budgets'),
+    path('orgs/<int:org_pk>/budgets/<int:pk>/', views.BudgetDetailView.as_view(), name='budget-detail'),
+    path('orgs/<int:org_pk>/budgets/<int:pk>/edit',
+         views.UpdateBudgetView.as_view(), name='edit-budget'),
+    path('orgs/<int:org_pk>/budgets/<int:pk>/delete', views.delete_budget, name='delete-budget'),
+    path('orgs/<int:org_pk>/departments', views.DepartmentsView.as_view(), name='department-list'),
+    path('orgs/<int:org_pk>/departments/new',
+         views.CreateDepartmentView.as_view(), name='new-department'),
+    path('orgs/<int:org_pk>/departments/delete', views.delete_departments, name='delete-departments'),
+    path('orgs/<int:org_pk>/departments/<int:pk>/',
+         views.DepartmentDetailView.as_view(), name='department-detail'),
+    path('orgs/<int:org_pk>/departments/<int:pk>/edit',
+         views.UpdateDepartmentView.as_view(), name='edit-department'),
+    path('orgs/<int:org_pk>/departments/<int:pk>/delete',
+         views.delete_department, name='delete-department'),
+
+    path('drivers/', views.DriversView.as_view(), name='driver-list'),
+    path('drivers/report', views.run_driver_report, name='driver-report'),
+    path('drivers/new', views.CreateDriverView.as_view(), name='new-driver'),
+    path('drivers/delete', views.delete_drivers, name='delete-drivers'),
+    path('drivers/<int:pk>/', views.DriverDetailView.as_view(), name='driver-detail'),
+    path('drivers/<int:pk>/edit', views.UpdateDriverView.as_view(), name='edit-driver'),
+    path('drivers/<int:pk>/delete', views.delete_driver, name='delete-driver'),
+    path('drivers/<int:pk>/deactivate', views.deactivate_driver, name='deactivate-driver'),
+    path('drivers/<int:pk>/reactivate', views.reactivate_driver, name='reactivate-driver'),
+
+    path('vehicles/', views.VehiclesView.as_view(), name='vehicle-list'),
+    path('vehicles/report', views.run_vehicle_report, name='vehicle-report'),
+    path('vehicles/new', views.CreateVehicleView.as_view(), name='new-vehicle'),
+    path('vehicles/<int:pk>/edit', views.UpdateVehicleView.as_view(), name='edit-vehicle'),
+    path('vehicles/<int:pk>/delete', views.delete_vehicle, name='delete-vehicle'),
+    path('vehicles/<int:vehicle_pk>/', views.VehicleDetailView.as_view(), name='vehicle-detail'),
+    path('vehicles/<int:vehicle_pk>/maintenance/new',
+         views.CreateVehicleMaintenanceView.as_view(), name='new-vehicle-maintenance'),
+    path('vehicles/<int:vehicle_pk>/maintenance/<int:pk>/edit',
+         views.UpdateVehicleMaintenanceView.as_view(), name='edit-vehicle-maintenance'),
+    path('vehicles/<int:vehicle_pk>/maintenance/<int:pk>/delete',
+         views.delete_vehicle_maintenance, name='delete-vehicle-maintenance'),
+
+    path('requests/', views.TripRequestsView.as_view(), name='request-list'),
+    path('requests/report', views.run_triprequest_report, name='request-report'),
+    path('requests/print/labels', views.print_labels, name='print-labels'),
+    path('requests/print/tickets', views.print_tickets, name='print-tickets'),
+    path('requests/new', views.CreateTripRequestView.as_view(), name='new-request'),
+    path('requests/<int:pk>/assign-self', views.assign_request_moderator, name='request-assign-self'),
+    path('requests/<int:pk>/', views.TripRequestDetailView.as_view(), name='request-detail'),
+    path('requests/<int:pk>/update', views.update_request, name='request-update'),
+    path('requests/<int:pk>/pending', views.pending_request, name='request-pending'),
+    path('requests/<int:pk>/edit', views.UpdateTripRequestView.as_view(), name='edit-request'),
+    path('requests/<int:pk>/delete', views.delete_trip_request, name='delete-request'),
+    path('requests/<int:pk>/approve', views.approve_request, name='approve-request'),
+    path('requests/<int:pk>/deny', views.deny_request, name='deny-request'),
+    path('requests/<int:pk>/cancel', views.cancel_trip_request, name='cancel-request'),
+    path('requests/<int:pk>/return-vehicle', views.return_request_vehicle, name='return-request-vehicle'),
+    path('requests/<int:pk>/finalize', views.finalize_request, name='finalize-request'),
+
+    path('ajax/load-departments', views.load_departments, name='load-departments'),
+    path('ajax/load-budgets', views.load_budgets, name='load-budgets'),
+    path('ajax/load-drivers', views.load_drivers, name='query-drivers'),
+
+    path('', views.HomeView.as_view(), name='home')
+]

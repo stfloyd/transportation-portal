@@ -1,0 +1,146 @@
+{% load static %}
+{% load i18n %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block breadcrumbs %}
+  {% clear_breadcrumbs %}
+  {% breadcrumb "Home" "home" %}
+{% endblock %}
+
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>Transportation Portal</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!-- Roboto Font -->
+  <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet"> 
+
+  <!-- Bootstrap 4 CSS -->
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link href="https://use.fontawesome.com/releases/v5.0.7/css/all.css" rel="stylesheet">
+
+  <!-- Custom application styling -->
+  <link rel="shortcut icon" href="{% static 'favicon.ico' %}" />
+  <link rel="stylesheet" href="{% static 'css/app.default.css' %}" />
+
+  <!-- Jquery -->
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script ype="text/javascript" href="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+
+  <!-- Easy Autocomplete JQuery -->
+  <script src="{% static 'vendor/easyautocomplete/jquery.easy-autocomplete.min.js' %}"></script>
+  <link ref="stylesheet" href="{% static 'vendor/easyautocomplete/easy-autocomplete.min.css' %}"></link>
+  <link ref="stylesheet" href="{% static 'vendor/easyautocomplete/easy-autocomplete.themes.min.css' %}"></link>
+
+  <!-- Jquery Phone # -->
+  <script ype="text/javascript" src="{% static 'vendor/jquery/js/jquery-input-mask-phone-number.min.js' %}"></script>
+
+  <!-- Moment JS (required by bootstrap-datepicker) -->
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.0/moment.min.js"></script>
+
+  <!-- Complete Bootstrap JavaScript Bundle -->
+  <script type="text/javascript" src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.12/js/bootstrap-select.min.js"></script>
+
+  <!-- Tempus Domiunus -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.39.0/js/tempusdominus-bootstrap-4.min.js" integrity="sha512-k6/Bkb8Fxf/c1Tkyl39yJwcOZ1P4cRrJu77p83zJjN2Z55prbFHxPs9vN7q3l3+tSMGPDdoH51AEU8Vgo1cgAA==" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.39.0/css/tempusdominus-bootstrap-4.min.css" integrity="sha512-3JRrEUwaCkFUBLK1N8HehwQgu8e23jTH4np5NHOmQOobuC4ROQxFwFgBLTnhcnQRMs84muMh0PnnwXlPq5MGjg==" crossorigin="anonymous" />
+
+  <script
+    type="text/javascript"
+    src="{% static 'django_tables2_column_shifter/js/django_tables2_column_shifter.min.js' %}">
+  </script>
+
+    <!-- Toastr -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css" integrity="sha256-R91pD48xW+oHbpJYGn5xR0Q7tMhH4xOrWn1QqMRINtA=" crossorigin="anonymous" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js" integrity="sha256-yNbKY1y6h2rbVcQtf0b8lq4a+xpktyFc3pSYoGAY1qQ=" crossorigin="anonymous"></script>
+</head>
+
+<body>
+  <div id="page-content-wrapper">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom sticky-top">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+          <img src="/static/logo.png" width="36" height="36" class="d-inline-block align-top" alt="">
+          Transportation
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
+          aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+          <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
+            <li class="nav-item">
+              <a href="{% url 'home' %}"
+                class="nav-link{% if request.resolver_match.view_name == 'home' %} active{% endif %}">Home</a>
+            </li>
+            {% if user.is_authenticated %}
+            {% if user.is_staff or user.is_moderator %}
+            <li class="nav-item" data-turbolinks="false">
+              <a class="nav-link{% if request.resolver_match.view_name == 'requests' %} active{% endif %}"
+                href="{% url 'request-list' %}">Requests</a>
+            </li>
+            <li class="nav-item" data-turbolinks="false">
+              <a class="nav-link{% if request.resolver_match.view_name == 'vehicles' %} active{% endif %}"
+                href="{% url 'vehicle-list' %}">Vehicles</a>
+            </li>
+            <li class="nav-item" data-turbolinks="false">
+              <a class="nav-link{% if request.resolver_match.view_name == 'drivers' %} active{% endif %}"
+                href="{% url 'driver-list' %}">Drivers</a>
+            </li>
+            <li class="nav-item" data-turbolinks="false">
+                <a class="nav-link{% if request.resolver_match.view_name == 'orgs' %} active{% endif %}"
+                  href="{% url 'org-list' %}">Organizations</a>
+            </li>
+            {% else %}
+            <li class="nav-item" data-turbolinks="false">
+              <a class="nav-link{% if request.resolver_match.view_name == 'requests' %} active{% endif %}"
+                href="{% url 'request-list' %}">Requests</a>
+            </li>
+            {% endif %}
+            {% endif %}
+          </ul>
+          <ul class="navbar-nav justify-content-end">
+            {% if user.is_authenticated %}
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true"
+                aria-expanded="false">
+                <i class="fas fa-user-circle fa-lg align-self-center" style="width: 32px;"></i>
+              </a>
+              <div class="dropdown-menu dropdown-menu-right">
+                <h5 class="dropdown-item-text mb-0">{{ user.full_name }}</h5>
+                <p class="dropdown-item-text text-muted mb-0">{{ user.email }}</p>
+                <div class="dropdown-divider"></div>
+                {% if user.is_superuser %}
+                <a href="/admin/" class="dropdown-item">Admin</a>
+                <div class="dropdown-divider"></div>
+                {% endif %}
+                <a href="{% url 'sign-out' %}" class="dropdown-item">Sign Out</a>
+              </div>
+            </li>
+            {% else %}
+            <!-- user.is_authenticated -->
+            <li class="nav-item">
+              <a class="btn btn-primary" href="{% url 'sign-in' %}" class="dropdown-item">Sign In</a>
+            </li>
+            {% endif %}
+            <!-- user.is_authenticated -->
+          </ul>
+        </div>
+      </div>
+    </nav> <!-- navbar -->
+    <main role="main" class="container-fluid p-0">
+      {% render_breadcrumbs %}
+      {% block content %}{% endblock %}
+    </main>
+  </div> <!-- page-content-wrapper -->
+</body>
+
+</html>

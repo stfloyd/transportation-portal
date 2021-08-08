@@ -1,0 +1,727 @@
+{% extends "transportation/base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load django_tables2 %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  {% breadcrumb 'Request List' 'request-list' %}
+  {% if triprequest is not None %}
+  {% breadcrumb 'Request' 'request-detail' triprequest.pk %}
+  {% breadcrumb 'Edit' 'edit-request' triprequest.pk %}
+  {% else %}
+  {% breadcrumb 'Create' 'new-request' %}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="jumbotron">
+    <h1>{{ pagetitle }}</h1>
+    {% if triprequest is not None %}
+    <a href="{% url 'request-detail' triprequest.pk %}">{{ triprequest }}</a>
+    {% endif %}
+    {% if triprequest is None %}
+    <p>Please fill out all the required fields.</p>
+    <button id="button-user-info" class="btn btn-primary" type="button">
+      Use My Information
+    </button>
+    {% endif %}
+  </div>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        {% if form.errors %}
+          {% for field in form %}
+            {% for error in field.errors %}
+              <div class="alert alert-danger">
+                <strong>{{ error|escape }}</strong>
+              </div>
+            {% endfor %}
+          {% endfor %}
+          {% for error in form.non_field_errors %}
+            <div class="alert alert-danger">
+              <strong>{{ error|escape }}</strong>
+            </div>
+          {% endfor %}
+        {% endif %}
+        <form id="request-form" role="form" method="post" data-departments-url="{% url 'load-departments' %}" novalidate data-budgets-url="{% url 'load-budgets' %}">
+            {% csrf_token %}
+            {{ form.status }}
+            {{ form.manager }}
+            <table class="table">
+              <tbody>
+                <tr class="border">
+                  <td class="border" colspan="2">
+                    <div class="row">
+                      <div class="col-2">
+                        <strong>Organization:</strong>
+                      </div>
+                      <div class="col-10">
+                        {{ form.org|as_crispy_field }}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="border">
+                  <td class="border">
+                    <div class="row">
+                      <div class="col-4">
+                        <strong>Requestor Name:</strong>
+                      </div>
+                      <div class="col-8">
+                        {{ form.contact_fn|as_crispy_field }} {{ form.contact_ln|as_crispy_field }}
+                      </div>
+                    </div>
+                  </td>
+                  <td class="border">
+                    <div class="row">
+                      <div class="col-4">
+                        <strong>Department:</strong>
+                      </div>
+                      <div class="col-8">
+                        {{ form.department|as_crispy_field }}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="border">
+                  <td class="border">
+                    <div class="row">
+                      <div class="col-4">
+                        <strong>Contact Phone:</strong>
+                      </div>
+                      <div class="col-8">
+                        {{ form.contact_phone|as_crispy_field }}
+                      </div>
+                    </div>
+                  </td>
+                  <td class="border">
+                    <div class="row">
+                        <div class="col-4">
+                          <strong>Budget:</strong>
+                        </div>
+                        <div class="col-8">
+                          {{ form.budget|as_crispy_field }}
+                        </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="border">
+                  <td class="border">
+                  <div class="row">
+                    <div class="col-4">
+                      <strong>Email:</strong>
+                    </div>
+                    <div class="col-8">
+                      {{ form.contact_email|as_crispy_field }}
+                    </div>
+                  </div>
+                  </td>
+                  <td class="border">
+                    <div class="row">
+                      <div class="col-4">
+                        <strong>Destination:</strong>
+                      </div>
+                      <div class="col-8">
+                        {{ form.destination|as_crispy_field }}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="border">
+                  <td class="border">
+                    <div class="row">
+                      <div class="col-4">
+                        <strong>Departure:</strong>
+                      </div>
+                      <div class="col-8">
+                        {{ form.depart_est|as_crispy_field }}
+                      </div>
+                    </div>
+                  </td>
+                  <td class="border">
+                    <div class="row">
+                      <div class="col-4">
+                        <strong>Return:</strong>
+                      </div>
+                      <div class="col-8">
+                        {{ form.return_est|as_crispy_field }}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="border">
+                  <td class="border">
+                    <div class="row">
+                      <div class="col-4">
+                        <strong>Driver:</strong>
+                      </div>
+                      <div class="col-8">
+                        {% if user.is_moderator and triprequest is not None %}<strong>Requested: </strong>{% endif %}{{ form.requested_driver|as_crispy_field }}
+                        {% if user.is_moderator and triprequest is not None %}
+                        <strong>Assigned: </strong>{{ form.driver|as_crispy_field }}
+                        {% endif %}
+                      </div>
+                    </div>
+                  </td>
+                  <td class="border">
+                    <div class="row">
+                      <div class="col-4">
+                        <strong>Vehicle Type:</strong>
+                      </div>
+                      <div class="col-8">
+                        {{ form.vehicle_type|as_crispy_field }}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="border">
+                  <td class="border">
+                    <div class="row">
+                      <div class="col-4">
+                        <strong>Number in Party:</strong>
+                      </div>
+                      <div class="col-8">
+                        {{ form.party_count|as_crispy_field }}
+                      </div>
+                    </div>
+                  </td>
+                  <td class="border">
+                    <div class="row">
+                      <div class="col-4">
+                        <strong>Approximate Mileage:</strong>
+                      </div>
+                      <div class="col-8">
+                        {{ form.mileage_est|as_crispy_field }}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="border">
+                  <td class="border" colspan="2">
+                    <div class="row">
+                      <div class="col-2">
+                        <strong>Purpose:</strong>
+                      </div>
+                      <div class="col-10">
+                        {{ form.purpose|as_crispy_field }}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="border">
+                  <td class="border" colspan="2">
+                    <div class="row">
+                      <div class="col-2">
+                        <strong>Agreement:</strong>
+                      </div>
+                      <div class="col-10">
+                        {{ form.agreement_accepted|as_crispy_field }}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            {% if triprequest is not None and request.user.is_moderator %}
+            <hr/>
+            <table class="table">
+              <tbody>
+                <tr class="border" >
+                  <th class="border" colspan="2">
+                    Approval ({{ triprequest.get_status_display }})
+                  </th>
+                  <th class="border">
+                    Date
+                  </th>
+                </tr>
+                <tr class="border">
+                  <td class="border" colspan="2">
+                    <div class="row">
+                      <div class="col-4">
+                        <strong>Originator:</strong>
+                      </div>
+                      <div class="col-8">
+                        {{ triprequest.contact_fn }} {{ triprequest.contact_ln }}
+                      </div>
+                    </div>
+                  </td>
+                  <td class="border">
+                    {{ triprequest.submitted }}
+                  </td>
+                </tr>
+                <tr class="border">
+                  <td class="border" colspan="2">
+                    <div class="row">
+                      <div class="col-4">
+                        <strong>Transportation Office:</strong>
+                      </div>
+                      <div class="col-8">
+                        Jeff Hurt
+                      </div>
+                    </div>
+                  </td>
+                  <td class="border">
+                    <div class="row">
+                      <div class="col-12 mx-3">
+                        {{ form.signed_off|as_crispy_field }}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="border">
+                  <td class="border">
+                    <div class="row">
+                      <div class="col-4">
+                        <strong>Vehicle:</strong>
+                      </div>
+                      <div class="col-8">
+                        {{ form.vehicle|as_crispy_field }}
+                      </div>
+                    </div>
+                  </td>
+                  <td class="border">
+                    <div class="row">
+                      <div class="col-4">
+                        <strong>Key:</strong>
+                      </div>
+                      <div class="col-8">
+                        {{ form.key_color|as_crispy_field }}
+                      </div>
+                    </div>
+                  </td>
+                  <td class="border">
+                    <div class="row">
+                      <div class="col-4">
+                        <strong>Card #:</strong>
+                      </div>
+                      <div class="col-8">
+                        {{ form.card_num|as_crispy_field }}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <hr/>
+            <table class="table">
+              <tr class="border text-center" align="center">
+                <th class="bg-secondary text-white" colspan="2">
+                  <strong>Driver Report</strong>
+                </th>
+              </tr>
+              <tr class="border">
+                <td colspan="2">
+                  <span>To be completed upon vehicle departure and return:</span>
+                </td>
+              </tr>
+              <tr class="border">
+                <td class="border">
+                  <div class="row">
+                    <div class="col-4">
+                      <strong>Departure:</strong>
+                    </div>
+                    <div class="col-8">
+                      {{ form.depart_act|as_crispy_field }}
+                    </div>
+                  </div>
+                </td>
+                <td class="border">
+                  <div class="row">
+                    <div class="col-4">
+                      <strong>Return:</strong>
+                    </div>
+                    <div class="col-8">
+                      {{ form.return_act|as_crispy_field }}
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr class="border">
+                <td class="border">
+                  <div class="row">
+                    <div class="col-4">
+                      <strong>Total Mileage:</strong>
+                    </div>
+                    <div class="col-8">
+                      {{ form.mileage_act|as_crispy_field }}
+                    </div>
+                  </div>
+                </td>
+                <td class="border">
+                  <div class="row">
+                    <div class="col-4">
+                      <strong>Fuel Cost:</strong>
+                    </div>
+                    <div class="col-8">
+                      {{ form.fuel_cost|as_crispy_field }}
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr class="border">
+                <td colspan="2">
+                  <span>Upon return:</span>
+                </td>
+              </tr>
+              <tr class="border">
+                <td>
+                  Is the inside of the vehicle clean?
+                </td>
+                <td>
+                  {{ form.is_vehicle_clean|as_crispy_field }}
+                </td>
+              </tr>
+              <tr class="border">
+                <td>
+                  Can the vehicle be driven forward from this parking space?
+                </td>
+                <td>
+                  {{ form.is_vehicle_parked_proper|as_crispy_field }}
+                </td>
+              </tr>
+              <tr class="border">
+                <td>
+                  Write any vehicle problems: 
+                </td>
+                <td>
+                  {{ form.vehicle_problems|as_crispy_field }}
+                </td>
+              </tr>
+            </table>
+            <hr/>
+            <table class="table">
+              <tr class="border text-center" align="center">
+                <th class="bg-primary text-white" colspan="2">
+                  <strong>Administrative Actions</strong>
+                </th>
+              </tr>
+              <tr class="border">
+                <td class="border">
+                  <div class="row">
+                    <div class="col-4">
+                      <button id="button-update" name="submit" class="btn btn-primary" type="submit">
+                        Update
+                      </button>
+                    </div>
+                    <div class="col-8">
+                      <p>Update the request information, but do not approve or deny the request. No emails will be sent.</p>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr class="border">
+                <td class="border">
+                  <div class="row">
+                    <div class="col-4">
+                      <button id="button-pending" name="pending" type="button" class="btn btn-primary">
+                        Pending
+                      </button>
+                    </div>
+                    <div class="col-8">
+                      <p>Resets the request to a pending status if previously approved or denied.</p>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr class="border">
+                <td class="border">
+                  <div class="row">
+                    <div class="col-4">
+                      <button id="button-approve" name="approve" type="submit" class="btn btn-success">
+                        Approve
+                      </button>
+                    </div>
+                    <div class="col-8">
+                      <p>Approve the request and update the information. An email will be sent to the originator's email address.</p>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr class="border">
+                <td class="border">
+                  <div class="row">
+                    <div class="col-4">
+                      <button id="button-deny" name="deny" type="button" class="btn btn-warning">
+                        Deny
+                      </button>
+                    </div>
+                    <div class="col-8">
+                      <p>An email will be sent to the user notifying them that the request has been denied. The request will not be deleted.</p>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr class="border">
+                <td class="border">
+                  <div class="row">
+                    <div class="col-4">
+                      <button id="button-print-ticket" name="print-ticket" type="button" class="btn btn-info">
+                        Ticket
+                      </button>
+                    </div>
+                    <div class="col-8">
+                      <p>Create a printable trip ticket to be printed and put in to the drivers packet.</p>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr class="border">
+                <td class="border">
+                  <div class="row">
+                    <div class="col-4">
+                      <button id="button-reload" name="reload" type="button" class="btn btn-secondary">
+                        Reload
+                      </button>
+                    </div>
+                    <div class="col-8">
+                      <p>Reload this page. Any entries not saved will be lost. The form will be reloaded with the latest information saved in the database.</p>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr class="border">
+                <td class="border">
+                  <div class="row">
+                    <div class="col-4">
+                      <button id="button-delete" name="delete" type="button" class="btn btn-danger">
+                        Delete
+                      </button>
+                    </div>
+                    <div class="col-8">
+                      <p>This request will be deleted. You will not be able to get this request again.</p>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </table>
+            {% else %}
+            <button id="request-submit-button" type="submit" name="submit" class="btn btn-primary">
+              Submit
+            </button>
+            <button id="request-cancel-button" type="cancel" name="cancel" class="btn btn-danger">
+              Cancel
+            </button>
+            {% endif %}
+        </form>
+        {{ form.media.js }}
+      </div>
+    </div>
+  </div>
+</div>
+{% block scripts %}
+<!--<script src = "https://code.jquery.com/ui/1.10.4/jquery-ui.js"></script>-->
+<script>
+function getCookie(name) {
+  let value = "; " + document.cookie;
+  const parts = value.split("; " + name + "=");
+  if (parts.length == 2) return parts.pop().split(";").shift();
+}
+$(function () {
+  var date = moment($('#id_depart_est_0').val(), 'YYYY-MM-DD');
+  $('#id_depart_est_0').datetimepicker({
+    date: date,
+    autoclose: true,
+    format: 'L'
+  });
+});
+
+$(function () {
+  var time = moment($('#id_depart_est_1').val(), 'HH:mm a');
+  $('#id_depart_est_1').datetimepicker({
+    date: time,
+    autoclose: true,
+    format: 'hh:mm a'
+  });
+});
+
+$(function () {
+  var date = moment($('#id_return_est_0').val(), 'YYYY-MM-DD');
+  $('#id_return_est_0').datetimepicker({
+    date: date,
+    autoclose: true,
+    format: 'L'
+  });
+});
+
+$(function () {
+  var time = moment($('#id_return_est_1').val(), 'HH:mm a');
+  $('#id_return_est_1').datetimepicker({
+    date: time,
+    autoclose: true,
+    format: 'hh:mm a'
+  });
+});
+
+$(function () {
+  var date = moment($('#id_depart_act_0').val(), 'YYYY-MM-DD');
+  $('#id_depart_act_0').datetimepicker({
+    date: date,
+    autoclose: true,
+    format: 'L'
+  });
+});
+
+$(function () {
+  var time = moment($('#id_depart_act_1').val(), 'HH:mm a');
+  $('#id_depart_act_1').datetimepicker({
+    date: time,
+    autoclose: true,
+    format: 'hh:mm a'
+  });
+});
+
+$(function () {
+  var date = moment($('#id_return_act_0').val(), 'YYYY-MM-DD');
+  $('#id_return_act_0').datetimepicker({
+    autoclose: true,
+    format: 'L'
+  });
+});
+
+$(function () {
+  var time = moment($('#id_return_act_1').val(), 'HH:mm a');
+  $('#id_return_act_1').datetimepicker({
+    date: time,
+    autoclose: true,
+    format: 'hh:mm a'
+  });
+});
+
+$(function () {
+  var date = moment($('#id_signed_off').val(), 'YYYY-MM-DD');
+  $('#id_signed_off').datetimepicker({
+    date: date,
+    autoclose: true,
+    format: 'L'
+  });
+});
+
+$('#button-user-info').click(function () {
+  $('#id_contact_fn').val("{{ request.user.first_name }}");
+  $('#id_contact_ln').val("{{ request.user.last_name }}");
+  $('#id_contact_email').val("{{ request.user.email }}");
+});
+
+$("#id_org").change(function () {
+  const departmentsUrl = $("#request-form").attr("data-departments-url");
+  const budgetsUrl = $("#request-form").attr("data-budgets-url");
+  let orgIds = [];
+  orgIds.push($(this).val());
+
+  $.ajax({
+    url: departmentsUrl,
+    data: {
+      'orgs': orgIds.join(',')
+    },
+    success: function (data) {
+      $("#id_department").html(data);
+    }
+  });
+  $.ajax({
+    url: budgetsUrl,
+    data: {
+      'orgs': orgIds.join(',')
+    },
+    success: function (data) {
+      $("#id_budget").html(data);
+    }
+  });
+});
+
+$("#id_requested_driver").easyAutocomplete({
+    url: function(phrase) {
+      return "/ajax/load-drivers?q=" + phrase + "&format=json";
+    },
+    getValue: "full_name",
+    list: {
+      match: {
+        enabled: true
+      },
+      maxNumberOfElements: 8
+    },
+    theme: "square"
+  });
+
+  {% if triprequest is not None and request.user.is_moderator %}
+  $(document).on('click', '#button-reload', function (e) {
+    e.preventDefault();
+    window.location.reload();
+  });
+  $(document).on('click', '#button-print-ticket', function (e) {
+    e.preventDefault();
+    const requestId = "{{ triprequest.pk }}";
+    const url = `/requests/print/tickets?pk_list=${requestId}`;
+    window.location.href = url;
+  });
+  $(document).on('click', '#button-pending', function (e) {
+    e.preventDefault();
+    const requestId = "{{ triprequest.pk }}";
+    const pendingUrl = `/requests/${requestId}/pending`;
+    var csrf = getCookie("csrftoken");
+    $.ajax({
+      type: 'POST',
+      url: pendingUrl,
+      data: {
+        'csrfmiddlewaretoken': csrf,
+        'pk': requestId
+      },
+      success: function (successResponse) {
+        window.location.reload();
+      },
+      error: function (errorResponse) {
+	console.log(errorResponse);
+        toastr.error('This request cannot be set to pending for unknown reasons. Please contact IT about this.');
+      }
+    });
+  });
+  $(document).on('click', '#button-delete', function (e) {
+    e.preventDefault();
+    const requestId = $(this).attr('data-request-id');
+    const deleteUrl = `/requests/${requestId}/delete`;
+    var csrf = getCookie("csrftoken");
+    $.ajax({
+      type: 'POST',
+      url: deleteUrl,
+      data: {
+        'csrfmiddlewaretoken': csrf,
+        'pk': requestId
+      },
+      success: function (successResponse) {
+        window.location = '/requests/';
+      },
+      error: function (errorResponse) {
+        toastr.error('This request cannot be deleted for unknown reasons. Please contact IT about this.');
+      }
+    });
+  });
+  $(document).on('click', '#button-deny', function (e) {
+    e.preventDefault();
+    const requestId = "{{ triprequest.pk }}";
+    const approvalUrl = `/requests/${requestId}/deny`;
+    var csrf = getCookie("csrftoken");
+    $.ajax({
+      type: 'POST',
+      url: approvalUrl,
+      data: {
+        'csrfmiddlewaretoken': csrf,
+        'pk': requestId
+      },
+      success: function (successResponse) {
+	      console.log(successResponse);
+        window.location.reload();
+      },
+      error: function (errorResponse) {
+        toastr.error('This request cannot be denied for unknown reasons. Please contact IT about this.');
+      }
+    });
+  });
+  {% endif %}
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,8 @@
+<option value="">---------</option>
+{% for org in orgs %}
+<optgroup label="{{org.name}}">
+    {% for budget in org.budgets.all %}
+    <option value="{{ budget.pk }}">{{ budget.name }}</option>
+    {% endfor %}
+</optgroup>
+{% endfor %}

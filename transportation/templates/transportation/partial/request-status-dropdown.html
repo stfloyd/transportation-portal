@@ -1,0 +1,4 @@
+<option value="">All</option>
+{% for status in request_statuses %}
+    <option value="{{ status.0 }}">{{ status.1 }}</option>
+{% endfor %}

@@ -1,0 +1,52 @@
+{% extends "transportation/base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load django_tables2 %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  {% breadcrumb 'Organization List' 'org-list' %}
+  {% if org is not None %}
+  {% breadcrumb 'Organization' 'org-detail' org.pk %}
+  {% breadcrumb 'Edit' 'edit-org' org.pk %}
+  {% else %}
+  {% breadcrumb 'Create' 'new-org' %}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="jumbotron">
+    <h1>{{ pagetitle }}</h1>
+    {% if org is not None %}
+    <a href="{% url 'org-detail' org.pk %}">{{ org }}</a>
+    {% endif %}
+    <p>Please fill out all the required fields.</p>
+  </div>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <form id="vehicle-form" method="post" novalidate>
+            {% csrf_token %}
+            {{ form|crispy }}
+            <button id="org-submit-button" type="submit" name="submit" class="btn btn-primary">
+                Submit
+            </button>
+            <button id="org-cancel-button" type="cancel" name="cancel" class="btn btn-danger">
+                Cancel
+            </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% block scripts %}
+<script>
+
+</script>
+{% endblock %}
+{% endblock %}

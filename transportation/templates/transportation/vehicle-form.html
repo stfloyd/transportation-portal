@@ -1,0 +1,64 @@
+{% extends "transportation/base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load django_tables2 %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  {% breadcrumb 'Vehicle List' 'vehicle-list' %}
+  {% if vehicle is not None %}
+  {% breadcrumb 'Vehicle' 'vehicle-detail' vehicle.pk %}
+  {% breadcrumb 'Edit' 'edit-vehicle' vehicle.pk %}
+  {% else %}
+  {% breadcrumb 'Create' 'new-vehicle' %}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="jumbotron">
+    <h1>{{ pagetitle }}</h1>
+    {% if vehicle is not None %}
+    <a href="{% url 'vehicle-detail' vehicle.pk %}">{{ vehicle }}</a>
+    {% endif %}
+    <p>Please fill out all the required fields.</p>
+  </div>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <form id="vehicle-form" method="post" data-departments-url="{% url 'load-departments' %}" novalidate>
+            {% csrf_token %}
+            {{ form|crispy }}
+            <button id="vehicle-submit-button" type="submit" name="submit" class="btn btn-primary">
+                Submit
+            </button>
+            <button id="vehicle-cancel-button" type="cancel" name="cancel" class="btn btn-danger">
+                Cancel
+            </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% block scripts %}
+<script>
+$("#id_orgs").change(function () {
+  const url = $("#vehicle-form").attr("data-departments-url");
+  const orgIds = $(this).val();
+  $.ajax({
+    url: url,
+    data: {
+      'orgs': orgIds.join(',')
+    },
+    success: function (data) {
+      $("#id_departments").html(data);
+    }
+  });
+});
+</script>
+{% endblock %}
+{% endblock %}

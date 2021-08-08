@@ -1,0 +1,357 @@
+{% extends "transportation/base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% load django_tables2 %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  {% breadcrumb 'Request List' 'request-list' %}
+{% endblock %}
+
+{% block content %}
+{{ filter.form.media }}
+<div class="container">
+  <div class="jumbotron mt-4">
+    <h1>Requests</h1>
+    <p>A list of all requests</p>
+  </div>
+  <div class="card border border-light shadow mb-4">
+    <div class="card-header bg-gradient-light border-0">
+      <div class="row px-3">
+        <div class="col-8">
+            <div class="btn-toolbar" role="toolbar" aria-label="Toolbar">
+                <span class="btn-group mr-2" role="group" aria-label="Create">
+                    <button id="button-new-request" class="btn btn-success" type="submit">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </span>
+                {% if user.is_moderator %}
+                <span class="btn-group mr-2" role="group" aria-label="Print">
+                    <button id="button-print-labels" class="btn btn-info" type="submit" disabled>Labels</button>
+                    <button id="button-print-tickets" class="btn btn-info" type="submit" disabled>Tickets</button>
+                </span>
+                {% endif %}
+                {% if user.is_staff %}
+                <span class="btn-group" role="group" aria-label="Print">
+                    <button id="button-run-report" class="btn btn-info" type="submit" disabled>Report</button>
+                </span>
+                {% endif %}
+            </div>
+        </div> <!-- col -->
+        {% if request.user.is_superuser %}
+        <div class="col-4 text-right">
+            <span class="btn-group" role="group" aria-label="Delete">
+            <button id="button-del-request" class="btn btn-lg btn-danger" type="submit" disabled>
+                <i class="fas fa-sm fa-trash"></i>
+            </button>
+            </span>
+        </div> <!-- col -->
+        {% endif %}
+      </div> <!-- row -->
+      <div class="row mt-2 mb-0 pb-0 mx-0">
+        <table class="table mb-0 pb-0 w-100 mx-0">
+          <tbody>
+            <tr class="border"> 
+              <th scope="col" class="align-middle text-center border w-10" rowspan="2">
+                Request Filter
+              </th>
+              <th scope="col" class="text-center w-15">
+                ID #
+              </th>
+              <th scope="col" class="text-center w-20">
+                Departure Date Range
+              </th>
+              <th scope="col" class="text-center w-20">
+                Status
+              </th>
+              <th scope="col" class="text-center w-20">
+                Originator Information
+              </th>
+              <th scope="col" class="align-middle border w-10" rowspan="2">
+                <div class="d-flex justify-content-center">
+                  <button id="submitFilterButton" class="btn btn-primary btn-block">Go</button>
+                </div>
+              </th>
+            </tr>
+            <tr class="border"> 
+              <td>
+                <div align="center"> 
+                  {{ filter.form.id }}
+                </div>
+              </td>
+              <td>
+                <div align="center"> 
+                  {{ filter.form.start }}
+                  to
+                  {{ filter.form.end }}
+                </div>
+              </td>
+              <td>
+                <div align="center"> 
+                  {{ filter.form.status }}
+                </div>
+              </td>
+              <td>
+                <div align="center"> 
+                  <select name="originatorselect" id="originatorselect" class="form-control">
+                    <option value="null" selected=""></option>			
+                    <option value="fn">First Name</option>
+                    <option value="ln">Last Name</option>
+                    <option value="email">Email</option>
+                    <option value="deptname">Dept Name</option>
+                    <option value="deptnum">Dept No</option>
+                    <option value="budgetname">Budget Name</option>
+                    <option value="budgetnum">Budget No</option>
+                  </select> 
+                  <input name="originatorinfo" type="text" id="originatorinfo" size="10" class="form-control">
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div> <!-- card-header -->
+    <div class="card-body p-0 m-0">
+      {% render_table table %}
+    </div>
+  </div>
+</div>
+{% block scripts %}
+<script type="text/javascript">
+$(function () {
+  var date = moment($('#id_start').val(), 'YYYY-MM-DD');
+  $('#id_start').datetimepicker({
+    date: date,
+    format: 'MM/DD/YYYY'
+  });
+});
+
+$(function () {
+  var date = moment($('#id_end').val(), 'YYYY-MM-DD');
+  $('#id_end').datetimepicker({
+    date: date,
+    format: 'MM/DD/YYYY'
+  });
+});
+
+var checkboxes = $("input[type='checkbox']"),
+  deleteButton = $("button[id='button-del-request']"),
+  labelsButton = $("button[id='button-print-labels']"),
+  ticketsButton = $("button[id='button-print-tickets']"),
+  reportButton = $("button[id='button-run-report']");
+checkboxes.click(function () {
+  deleteButton.attr("disabled", !checkboxes.is(":checked"));
+  labelsButton.attr("disabled", !checkboxes.is(":checked"));
+  ticketsButton.attr("disabled", !checkboxes.is(":checked"));
+  reportButton.attr("disabled", !checkboxes.is(":checked"));
+});
+
+$(document).ready(function() {
+  $('.prev i').removeClass();
+  $('.prev i').addClass("fas fa-chevron-left");
+
+  $('.next i').removeClass();
+  $('.next i').addClass("fas fa-chevron-right");
+});
+
+function getCookie(name) {
+  var value = "; " + document.cookie;
+  var parts = value.split("; " + name + "=");
+  if (parts.length == 2) return parts.pop().split(";").shift();
+}
+
+$(document).on('click', '#button-new-request', function (e) {
+  window.location.href = "{% url 'new-request' %}";
+});
+
+$(document).on('click', '.button-request-detail', function (e) {
+  e.preventDefault();
+  const requestId = $(this).attr('data-request-id');
+  window.location.href = `/requests/${requestId}/`;
+});
+
+$(document).on('click', '#button-print-labels', function (e) {
+  e.preventDefault();
+  const tableControl = document.getElementById('table');
+  const csrf = getCookie("csrftoken");
+  let requestIds = [];
+
+  $('input:checkbox:checked', tableControl).each(function () {
+    const row = $(this).closest('tr');
+    const requestId = row.data('id');
+    requestIds.push(requestId);
+  });
+
+  const idListString = requestIds.join(',');
+  const url = `/requests/print/labels?pk_list=${idListString}`;
+  window.location.href = url;
+});
+
+$(document).on('click', '#button-print-tickets', function (e) {
+  e.preventDefault();
+  const tableControl = document.getElementById('table');
+  const csrf = getCookie("csrftoken");
+  let requestIds = [];
+
+  $('input:checkbox:checked', tableControl).each(function () {
+    const row = $(this).closest('tr');
+    const requestId = row.data('id');
+    requestIds.push(requestId);
+  });
+
+  const idListString = requestIds.join(',');
+  const url = `/requests/print/tickets?pk_list=${idListString}`;
+  window.location.href = url;
+});
+
+$(document).on('click', '#button-run-report', function (e) {
+  e.preventDefault();
+  const tableControl = document.getElementById('table');
+  const csrf = getCookie("csrftoken");
+  let requestIds = [];
+
+  $('input:checkbox:checked', tableControl).each(function () {
+    const row = $(this).closest('tr');
+    const requestId = row.data('id');
+    requestIds.push(requestId);
+  });
+
+  const idListString = requestIds.join(',');
+  const url = `/requests/report?pk_list=${idListString}`;
+  window.location.href = url;
+});
+
+{% if request.user.is_staff or request.user.is_moderator %}
+$(document).on('click', '#button-del-request', function (e) {
+  e.preventDefault();
+  var tableControl = document.getElementById('table');
+  var csrf = getCookie("csrftoken");
+  $('input:checkbox:checked', tableControl).each(function () {
+    var row = $(this).closest('tr');
+    var request_id = row.data('id');
+    var url_mask = "{% url 'delete-request' pk=0 %}".replace('0', request_id.toString());
+    $.ajax({
+      type: 'POST',
+      url: url_mask,
+      dataType: 'html',
+      data: {
+        'csrfmiddlewaretoken': csrf,
+      },
+      success: function (successResponse) {
+        row.remove();
+      },
+      error: function (errorResponse) {
+        toastr.error('These request(s) cannot be deleted for unknown reasons. Contact IT about this error.');
+      }
+    })
+  });
+});
+{% endif%}
+
+function getURLNoParameters(url) {
+  var tempArray = url.split("?");
+  return tempArray[0];
+}
+
+/**
+ * http://stackoverflow.com/a/10997390/11236
+ */
+function updateURLParameter(url, param, paramVal) {
+  var newAdditionalURL = "";
+  var tempArray = url.split("?");
+  var baseURL = tempArray[0];
+  var additionalURL = tempArray[1];
+  var temp = "";
+  if (additionalURL) {
+    tempArray = additionalURL.split("&");
+    for (var i=0; i<tempArray.length; i++){
+      if(tempArray[i].split('=')[0] != param){
+        newAdditionalURL += temp + tempArray[i];
+        temp = "&";
+      }
+    }
+  }
+
+  var rows_txt = temp + "" + param + "=" + paramVal;
+  return baseURL + "?" + newAdditionalURL + rows_txt;
+}
+
+$("#submitFilterButton").on("click", (e) => {
+  var url = getURLNoParameters(window.location.href);
+
+  const idValue = $("#id_id").val();
+  const startDateValue = $("#id_start").val();
+  const endDateValue = $("#id_end").val();
+  const statusValue = $("#id_status").val();
+  const combinedString = `${startDateValue} - ${endDateValue}\n${statusValue}`;
+  const originatorValue = $("#originatorselect").val();
+  const originatorQueryValue = $("#originatorinfo").val();
+
+  if (idValue) {
+    url = updateURLParameter(url, 'id', idValue);
+  }
+
+  if (startDateValue && endDateValue) {
+    const startDate = moment(startDateValue, 'MM/DD/YYYY');
+    const endDate = moment(endDateValue, 'MM/DD/YYYY');
+    url = updateURLParameter(url, 'start', startDate.format('YYYY-MM-DD'));
+    url = updateURLParameter(url, 'end', endDate.format('YYYY-MM-DD'));
+  }
+
+  if (statusValue) {
+    url = updateURLParameter(url, 'status', statusValue);
+  }
+
+  if (originatorValue && originatorValue != 'null' && originatorQueryValue) {
+    url = updateURLParameter(url, originatorValue, originatorQueryValue);
+  }
+
+  window.location.href = url;
+});
+
+$(document).ready(() => {
+  const originatorSelect = $('#originatorselect');
+  const originatorQueryValue = $('#originatorinfo');
+
+  var url = new URL(document.location);
+
+  var params = url.searchParams;
+
+  const fnParam = params.get('fn');
+  const lnParam = params.get('ln');
+  const emailParam = params.get('email');
+  const deptnameParam = params.get('deptname');
+  const deptnumParam = params.get('deptnum');
+  const budgetnameParam = params.get('budgetname');
+  const budgetnumParam = params.get('budgetnum');
+
+  if (fnParam) {
+    originatorSelect.val('fn');
+    originatorQueryValue.val(fnParam);
+  } else if (lnParam) {
+    originatorSelect.val('ln');
+    originatorQueryValue.val(lnParam);
+  } else if (emailParam) {
+    originatorSelect.val('email');
+    originatorQueryValue.val(emailParam);
+  } else if (deptnameParam) {
+    originatorSelect.val('deptname');
+    originatorQueryValue.val(deptnameParam);
+  } else if (deptnumParam) {
+    originatorSelect.val('deptnum');
+    originatorQueryValue.val(deptnumParam);
+  } else if (budgetnameParam) { 
+    originatorSelect.val('budgetname');
+    originatorQueryValue.val(budgetnameParam);
+  } else if (budgetnumParam) {
+    originatorSelect.val('budgetnum');
+    originatorQueryValue.val(budgetnumParam);
+  }
+});
+</script>
+{% endblock %}
+{% endblock %}

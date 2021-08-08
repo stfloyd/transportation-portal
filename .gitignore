@@ -1,0 +1,10 @@
+**/__pycache__/
+*.db
+**/env/
+**/.vscode/
+*.code-workspace
+**/.venv/
+**.env
+*.lock
+**.idea/
+**/.pytest_cache/
